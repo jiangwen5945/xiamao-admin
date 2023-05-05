@@ -7,7 +7,7 @@
         <CommonExcel :tableData="tableData" :loading.sync="loading"></CommonExcel>
       </div>
       <div class="right">
-        <el-input placeholder="请输入订单编号" v-model="queryParam.id"></el-input>
+        <el-input placeholder="请输入订单编号" v-model="queryParam.id" :readonly="readonlyInput" @focus="cancelReadOnly()"></el-input>
         <el-button type="primary" size="medium" @click="handleQuery" style="margin-left: 10px;">查询</el-button>
       </div>
     </div>
@@ -161,7 +161,8 @@ export default {
         { content: '待完成' }
       ],
       initActivities: null,
-      loading: false
+      loading: false,
+      readonlyInput: true
     };
   },
   methods: {
@@ -197,6 +198,9 @@ export default {
     },
     handleQuery() {
       this.getData() //请求列表数据
+    },
+    cancelReadOnly() {
+      this.readonlyInput= false;
     }
   }
 }

@@ -3,7 +3,7 @@ const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer') // 生成项
 const CompressionPlugin = require("compression-webpack-plugin");
 
 module.exports = defineConfig({
-  productionSourceMap: false, // 打包时不会生出 .map文件，加快打包速度
+  productionSourceMap: false, // 关闭源码映射｜打包时不会生出 .map文件，加快打包速度
   transpileDependencies: true,
   lintOnSave: false, // 关闭eslint校验
   // 部署应用包时的基本 URL
@@ -14,7 +14,7 @@ module.exports = defineConfig({
       args[0].title = "瞎猫管理系统";
       return args;
     })
-    // 生产环境 关闭源码映射｜开启gzip压缩
+    // 生产环境 开启gzip压缩
     if (process.env.NODE_ENV === 'production') {
       config.plugin('webpack-report').use(BundleAnalyzerPlugin, [{
         analyzerMode: 'static'
