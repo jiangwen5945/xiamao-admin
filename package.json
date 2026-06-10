@@ -5,6 +5,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "deploy:cf": "wrangler pages deploy dist --project-name xiamao-admin",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
