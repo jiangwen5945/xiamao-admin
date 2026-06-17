@@ -12,7 +12,7 @@
     "axios": "^1.2.1",
     "core-js": "^3.8.3",
     "echarts": "^5.1.2",
-    "element-ui": "^2.15.13",
+    "element-ui": "^2.6.3",
     "js-cookie": "^3.0.1",
     "mockjs": "^1.1.0",
     "vue": "^2.6.14",

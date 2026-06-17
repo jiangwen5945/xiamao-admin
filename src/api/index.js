@@ -73,7 +73,7 @@ export const deleteGoodsCategory = (data) => {
 
 // 角色
 export const getRolesList = (data) => {
-  return http.get("/role/getRolesList", data);
+  return http.get("/role/list", data);
 };
 export const createRole = (data) => {
   return http.post("/role/add", data);

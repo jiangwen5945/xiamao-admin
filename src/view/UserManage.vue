@@ -4,7 +4,7 @@
     <div class="table-header">
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd"
-          >+新增</el-button
+          >新增</el-button
         >
         <CommonExcel
           :tableData="tableData"
@@ -138,10 +138,10 @@
         <el-form-item label="角色" prop="roles">
           <el-checkbox-group v-model="form.roles">
             <el-checkbox
-              :label="item.roleName"
               v-for="item in roleList"
-              :key="item.roleId"
-            ></el-checkbox>
+              :label="item.name"
+              :key="item.id"
+            >{{ item.title }}</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
         <el-form-item label="出生日期" prop="birth">
@@ -200,9 +200,11 @@ export default {
       readonlyInput: true,
     };
   },
-  created() {
+  async created() {
     this.getData();
     this.initForm = { ...this.form };
+    const res = await getRolesList()
+    this.roleList = res
   },
   activated() {
     this.getData();
@@ -263,6 +265,9 @@ export default {
       this.isVisible = true;
       this.modalType = 1;
       this.form = JSON.parse(JSON.stringify(row));
+      if (typeof this.form.roles === 'string') {
+        this.form.roles =  this.form.roles.split(',')
+      }
     },
     handleAdd() {
       this.isVisible = true;
