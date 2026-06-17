@@ -19,7 +19,7 @@
       <el-dropdown @command="handleCommand">
         <div class="el-dropdown-link avatar-box">
           <el-avatar :src="userInfo.avatar"></el-avatar>
-          <span class="username">{{ userInfo.userName }}</span>
+          <span class="username">{{ userInfo.username }}</span>
         </div>
         <el-dropdown-menu slot="dropdown">
           <el-dropdown-item command="member">个人中心</el-dropdown-item>

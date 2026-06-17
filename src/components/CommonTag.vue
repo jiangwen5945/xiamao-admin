@@ -1,6 +1,6 @@
 <template>
   <div class="tag-container">
-    <el-tag size="small" v-for="(item, index) in tags" :key="item.path" :type="item.type"
+    <el-tag size="small" v-for="(item, index) in tags" :key="item.path" 
       :effect="$route.path === item.path ? 'dark' : 'plain'" :closable="item.path !== '/home'"
       @close="handleClose(item, index)" @click="changeMenu(item)">
       {{ item.name }}

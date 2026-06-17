@@ -2,7 +2,7 @@
   <div class="lock-screen" v-show="$store.state.setting.isLockScreen">
     <div class="content-box">
       <img class="avatar" :src="userInfo.avatar" alt="" />
-      <span class="info"> {{ userInfo.role }}: {{ userInfo.userName }} </span>
+      <span class="info"> {{ userInfo.roles }}: {{ userInfo.username }} </span>
 
       <el-input v-model="form.passWord" type="password" placeholder="请输入当前用户密码" show-password prefix-icon="el-icon-key"
         size="large" style="width: 70%">
