@@ -72,16 +72,15 @@ export default {
       if (this.form.passWord === '') return
       this.form.userName = this.userInfo.userName
       userPermission(this.form).then(data => {
-        this.$store.dispatch('setting/setLockScreen', false)
-        //状态提示  
-        this.$notify({
-          message: '欢迎回来！',
-          type: 'success',
-          duration: 1200
-        })
-
-        // document.removeEventListener('onkeydown')
-        // document.removeEventListener('oncontextmenu')
+        if (data) {
+          this.$store.dispatch('setting/setLockScreen', false)
+          //状态提示  
+          this.$notify({
+            message: '欢迎回来！',
+            type: 'success',
+            duration: 1200
+          })
+        }
       })
     },
     // 回车登录

@@ -26,7 +26,7 @@ http.interceptors.response.use(function (response) {
         type: 'error',
         message: message
       });
-      return Promise.reject(message)
+      console.error(message);
     }
   }
 }, function (error) {
