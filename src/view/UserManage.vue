@@ -77,10 +77,11 @@
       <!-- 分页 -->
       <el-pagination
         layout="prev, pager, next"
-        :total="count"
+        :total="total"
+        :page-size="queryParam.pageSize"
+        :current-page.sync="queryParam.page"
         class="pagination"
         @current-change="handleCurrentChange"
-        :hide-on-single-page="true"
       >
       </el-pagination>
     </div>
@@ -173,7 +174,7 @@ export default {
   data() {
     return {
       tableData: [],
-      count: null,
+      total: 0,
       isVisible: false,
       modalType: 0,
       initForm: null,
@@ -191,7 +192,7 @@ export default {
       },
       queryParam: {
         page: 1,
-        limit: 10,
+        pageSize: 10,
         username: "",
       },
       rules,
@@ -208,8 +209,9 @@ export default {
   },
   methods: {
     async getData() {
-      this.tableData = await this.getDataApi();
-      console.log("tableData", this.tableData);
+      const res = await this.getDataApi();
+      this.tableData = res.list;
+      this.total = res.total;
     },
     getDataApi() {
       return getUser(this.queryParam);
@@ -228,6 +230,7 @@ export default {
       this.getData();
     },
     handleQuery() {
+      this.queryParam.page = 1;
       this.getData();
     },
     cancelReadOnly() {
@@ -298,12 +301,7 @@ export default {
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },
-  },
-  filters: {
-    test: function (value) {
-      return value.trim().split(",");
-    },
-  },
+  }
 };
 </script>
 
