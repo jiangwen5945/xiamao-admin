@@ -38,33 +38,37 @@ const validate = {
 
 // 导出验证规则
 export default {
-    userName: [
+    username: [
       { required: true, message: '姓名不能为空', trigger: 'blur' },
       { min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur' }
     ],
-    passWord: [
-      { validator: validate.passWord, trigger: 'blur' }
+    password: [
+      { required: true, message: '密码不能为空', trigger: 'blur' },
+      { min: 6, max: 24, message: '密码为6-24个字符', trigger: 'blur' }
     ],
-    nickName: [
-      { required: true, message: '昵称不能为空', trigger: 'blur' },
-      { min: 2, message: '昵称长度不能少于2位', trigger: 'blur' }
-    ],
-    roles: [
-      { required: true, message: '角色不能为空', trigger: 'blur' }
-    ],
-    sex: [
-      { required: true, message: '性别不能为空', trigger: 'change' }
-    ],
-    birth: [
-      { required: true, message: '日期不能为空', trigger: 'change' }
-    ],
-    addr: [
-      { required: true, message: '地址不能为空', trigger: 'blur' }
-    ],
-    age: [
-      { required: true, message: '年龄不能为空' },
-      { type: 'number', message: '年龄必须为数字值' }
-    ],
+    // nickname: [
+    //   { required: true, message: '昵称不能为空', trigger: 'blur' },
+    //   { min: 2, message: '昵称长度不能少于2位', trigger: 'blur' }
+    // ],
+    // email: [
+    //   { required: true, message: '邮箱不能为空', trigger: 'blur' },
+    //   { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+    // ],
+    // phone: [
+    //   { required: true, message: '手机号不能为空', trigger: 'blur' }
+    // ],
+    // gender: [
+    //   { required: true, message: '性别不能为空', trigger: 'change' }
+    // ],
+    // status: [
+    //   { required: true, message: '状态不能为空', trigger: 'change' }
+    // ],
+    // roles: [
+    //   { required: true, message: '角色不能为空', trigger: 'blur' }
+    // ],
+    // birth: [
+    //   { required: true, message: '日期不能为空', trigger: 'change' }
+    // ],
 
     level:[
       { required: true, message: '级别不能为空', trigger: 'change' }

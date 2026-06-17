@@ -48,6 +48,13 @@ module.exports = defineConfig({
   // webpack-dev-server开启IP和域名访问权限
   devServer: {
     historyApiFallback: true,
-    allowedHosts: 'all'
+    allowedHosts: 'all',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' } // 将 /api/user 转为 /user 发送给后端
+      }
+    }
   }
 })

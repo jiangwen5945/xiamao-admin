@@ -4,7 +4,7 @@
       <el-button icon="el-icon-menu" size="mini" @click="handleBtn" style="margin-right: 20px;"></el-button>
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: item.path }" v-for="item in crumbsList" :key="item.path">
-          <span class="nav-text">{{ item.label }}</span>
+          <span class="nav-text">{{ item.name }}</span>
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
@@ -54,8 +54,8 @@ export default {
     handleCommand(command) {
       if (command === 'logout') {
         Cookie.remove('token')  // 退出清除token
-        Cookie.remove('menuArray')  // 退出清除菜单列表数据
-        Cookie.remove('userInfo')  // 退出清除菜单列表数据
+        localStorage.removeItem('menuArray')
+        localStorage.removeItem('userInfo')
         this.$message.success('退出成功!');
         this.$router.push('/login')
       }
@@ -82,7 +82,7 @@ export default {
       isFullScreen: state => state.setting.isFullScreen,
     }),
     userInfo() {
-      return this.$store.state.tab.userInfo || JSON.parse(Cookie.get('userInfo'))
+      return this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem('userInfo'))
     }
   },
   watch:{

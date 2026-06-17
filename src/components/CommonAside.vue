@@ -1,7 +1,7 @@
 <template>
   <el-menu 
       router
-      :default-active='$route.name'
+      :default-active='$route.path'
       class="aside-menu"
       :collapse="isCollapse"
   > 
@@ -11,21 +11,21 @@
         <span v-show="!isCollapse">瞎猫管理系统</span>
       </el-menu-item>
       <!-- 没有二级菜单 -->
-      <el-menu-item :index="item.name" v-for="item in noChildren" :key="item.name" @click="handleUrl(item)">
+      <el-menu-item :index="item.path" v-for="item in noChildren" :key="item.path" @click="handleUrl(item)">
           <i :class="`el-icon-${item.icon}`"></i>
-          <span slot="title">{{item.label}}</span>
+          <span slot="title">{{item.name}}</span>
       </el-menu-item>
       <!-- 有二级菜单 -->
-      <el-submenu :index="item.label" v-for="item in hasChildren" :key="item.label">
+      <el-submenu :index="item.path" v-for="item in hasChildren" :key="item.path">
           <template slot="title">
             <i :class="`el-icon-${item.icon}`"></i>
-            <span slot="title">{{item.label}}</span>
+            <span slot="title">{{item.name}}</span>
           </template>
           <el-menu-item-group>
-            <el-menu-item :index="subItem.name"  @click="handleUrl(subItem)" v-for="subItem in item.children" :key="subItem.name">
+            <el-menu-item :index="subItem.path"  @click="handleUrl(subItem)" v-for="subItem in item.children" :key="subItem.path">
                 <template slot="title">
                     <i :class="`el-icon-${subItem.icon}`"></i>
-                    <span slot="title"> {{subItem.label}}</span>
+                    <span slot="title"> {{subItem.name}}</span>
                 </template>
             </el-menu-item>
           </el-menu-item-group>
@@ -33,12 +33,11 @@
   </el-menu>
 </template>
 <script>
-import Cookie from 'js-cookie'
 export default {
   methods: {
     handleUrl(item) {
       // if (this.$route.path !== item.path && !(this.$route.path === '/home' && item.path === '/')) {
-      //   this.$router.push({ path: item.path, query: { label: item.label }})
+      //   this.$router.push({ path: item.path, query: { name: item.name }})
       // }
       // 调用导航栏更新
       this.$store.commit('updateNavList', item)
@@ -56,7 +55,7 @@ export default {
     },
     menuArray() {
       // 缓存中存在则在缓存中读取，否则重新获取
-      return JSON.parse(Cookie.get('menuArray')) || this.$store.state.tab.menuArray
+      return JSON.parse(localStorage.getItem('menuArray')) || this.$store.state.tab.menuArray
     }
   }
 }

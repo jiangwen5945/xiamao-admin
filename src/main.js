@@ -10,7 +10,11 @@ import ElementUI from 'element-ui';
 import '../src/styles/theme.scss'
 import '../src/styles/global.scss'
 import '../src/styles/variables.css'
-import '../mock/index.js'
+console.log('process.env', process.env);
+
+if (process.env.VUE_APP_USE_MOCK !== 'false') {
+  import('../mock/index.js')
+}
 
 Vue.config.productionTip = false
 Vue.use(ElementUI);

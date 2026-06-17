@@ -69,13 +69,13 @@
 </template>
  
 <script>
-import Cookie from "js-cookie";
+
 import rules from "@/utils/rules";
 export default {
   name: "member",
   
   created(){
-    this.form = this.$store.state.tab.userInfo || JSON.parse(Cookie.get("userInfo"))
+    this.form = this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem("userInfo"))
   },
   computed:{
     isSubmit() {

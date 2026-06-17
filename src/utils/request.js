@@ -1,5 +1,6 @@
 import Axios from "axios"
 import {Message} from 'element-ui'
+import Cookie from 'js-cookie'
 
 const http = new Axios.create({
   baseURL: '/api',
@@ -8,17 +9,19 @@ const http = new Axios.create({
 
 // 请求拦截器
 http.interceptors.request.use(function (config) {
-  // 发送请求前做些什么
+  const token = Cookie.get('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
   return config
 }, function (error) {
-  // 请求错误时
   return Promise.reject(error)
 })
 // 响应拦截器
 http.interceptors.response.use(function (response) {
   // 对响应数据做些什么
   if (response.status === 200) {
-    const { code, result, message } = response.data
+    const { code, data: result, message } = response.data
     if (code === 200) {
       return result
     } else {

@@ -3,11 +3,11 @@
     <el-card class="box-card">
       <h3>后台管理登录</h3>
       <el-form :model="form" status-icon :rules="rules" ref="formRef">
-        <el-form-item prop="userName">
-          <el-input v-model="form.userName" prefix-icon="el-icon-user"></el-input>
+        <el-form-item prop="username">
+          <el-input v-model="form.username" prefix-icon="el-icon-user"></el-input>
         </el-form-item>
-        <el-form-item prop="passWord" style="margin-bottom: 10px;">
-          <el-input type="password" v-model="form.passWord" prefix-icon="el-icon-key"></el-input>
+        <el-form-item prop="password" style="margin-bottom: 10px;">
+          <el-input type="password" v-model="form.password" prefix-icon="el-icon-key"></el-input>
         </el-form-item>
 
         <el-form-item style="margin-bottom: 10px;">
@@ -26,15 +26,25 @@
 <script>
 import Cookie from 'js-cookie'
 import rules from '@/utils/rules';
-import { userPermission } from '../api'
+import { sha256 } from '@/utils/hash'
+import { login, getUserMenus, getUserDetail } from '../api'
 import { mapMutations } from 'vuex'
+
+function parseJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch {
+    return {}
+  }
+}
+
 export default {
   name: 'LoginView',
   data() {
     return {
       form: {
-        userName: "",
-        passWord: ""
+        username: "",
+        password: ""
       },
       rememberCheck: true,
       rules
@@ -48,7 +58,7 @@ export default {
   },
   computed: {
     isSubmit() {
-      return !!this.form.userName && !!this.form.passWord
+      return !!this.form.username && !!this.form.password
     }
   },
   methods: {
@@ -56,14 +66,20 @@ export default {
     async handleLogin() {
       const isRule = await this.$refs.formRef.validate()
       if (!isRule) return
-      userPermission(this.form).then(data => {
-        Cookie.set('token', data.token)  // 在cookie中缓存token
-        this.setMenuArray(data.menu)     // 获取菜单的数据，存入store中
-        this.setUserInfo(data.userInfo)     // 获取登录用户的数据，存入store中
-        this.addMenuToRouter(this.$router)    // 设置动态添加路由
-        this.$message.success('登录成功!');    //状态提示
-        this.$router.push('./home')
-      })
+      const res = await login(this.form)
+      Cookie.set('token', res.token)
+      // 设置用户密码哈希值
+      sessionStorage.setItem('lockHash', await sha256(this.form.password))
+      const { userId } = parseJwt(res.token)
+      const [menus, user] = await Promise.all([
+        getUserMenus(),
+        getUserDetail({ id: userId })
+      ])
+      this.setMenuArray(menus)
+      this.setUserInfo(user)
+      this.addMenuToRouter(this.$router)
+      this.$message.success('登录成功!')
+      this.$router.push('./home')
     },
     // 回车登录
     keyUpSubmit() {

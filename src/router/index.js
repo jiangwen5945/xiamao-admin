@@ -39,8 +39,9 @@ router.beforeEach((to, from, next) => {
     next({ name: 'LoginView' })
   } else if (token && to.name === 'LoginView') {
     next({ name: 'home' })
+  } else {
+    next()
   }
-  next()
 })
 
 // 解决vue路由警告:Duplicate named routes definition问题

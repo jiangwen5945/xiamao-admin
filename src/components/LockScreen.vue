@@ -14,8 +14,8 @@
   </div>
 </template>
 <script>
-import Cookie from 'js-cookie'
-import { userPermission } from '../api'
+
+import { sha256 } from '@/utils/hash'
 export default {
   data() {
     return {
@@ -29,7 +29,7 @@ export default {
   },
   computed: {
     userInfo() {
-      return this.$store.state.tab.userInfo || JSON.parse(Cookie.get('userInfo'))
+      return this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem('userInfo'))
     }
   },
   mounted() {
@@ -68,19 +68,18 @@ export default {
       this.$store.dispatch('setting/setLockScreen', true)
     },
     // 解除屏幕锁定
-    handleUnlock() {
+    async handleUnlock() {
       if (this.form.passWord === '') return
-      this.form.userName = this.userInfo.userName
-      userPermission(this.form).then(data => {
-        if (data) {
-          this.$store.dispatch('setting/setLockScreen', false)
-          //状态提示  
-          this.$notify({
-            message: '欢迎回来！',
-            type: 'success',
-            duration: 1200
-          })
-        }
+      const savedHash = sessionStorage.getItem('lockHash')
+      if (await sha256(this.form.passWord) !== savedHash) {
+        this.$message.error('密码错误')
+        return
+      }
+      this.$store.dispatch('setting/setLockScreen', false)
+      this.$notify({
+        message: '欢迎回来！',
+        type: 'success',
+        duration: 1200
       })
     },
     // 回车登录

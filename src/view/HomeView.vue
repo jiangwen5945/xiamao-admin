@@ -63,7 +63,7 @@
 <script>
 import { getData } from '../api'
 import * as echarts from 'echarts'
-import Cookie from 'js-cookie'
+
 // import { mapState } from 'vuex'
 export default {
   name: 'HomeView',
@@ -87,7 +87,7 @@ export default {
   },
   computed: {
     userInfo() {
-      return this.$store.state.tab.userInfo || JSON.parse(Cookie.get('userInfo'))
+      return this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem('userInfo'))
     }
   },
   methods: {

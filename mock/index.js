@@ -33,7 +33,7 @@ Mock.mock(/api\/authority\/getAuthorityList/, authorityApi.getAuthorityList)
 Mock.mock('/api/user/add', 'post', userApi.createUser)
 Mock.mock('/api/user/edit', 'post', userApi.updateUser)
 Mock.mock('/api/user/del', 'post', userApi.deleteUser)
-Mock.mock(/api\/user\/getUser/, userApi.getUserList) // 查询接口和获取数据接口为同一个，使用正则模糊匹配接口
+// Mock.mock(/api\/user\/getUser/, userApi.getUserList) // 查询接口和获取数据接口为同一个，使用正则模糊匹配接口
 
 /**
  * 商品管理
