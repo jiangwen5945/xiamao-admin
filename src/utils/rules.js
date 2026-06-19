@@ -40,10 +40,9 @@ const validate = {
 export default {
     username: [
       { required: true, message: '姓名不能为空', trigger: 'blur' },
-      { min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur' }
+      { min: 2, max: 20, message: '长度在 2 到 10 个字符', trigger: 'blur' }
     ],
     password: [
-      { required: true, message: '密码不能为空', trigger: 'blur' },
       { min: 6, max: 24, message: '密码为6-24个字符', trigger: 'blur' }
     ],
     // nickname: [

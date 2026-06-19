@@ -7,7 +7,7 @@
           <el-input v-model="form.username" prefix-icon="el-icon-user"></el-input>
         </el-form-item>
         <el-form-item prop="password" style="margin-bottom: 10px;">
-          <el-input type="password" v-model="form.password" prefix-icon="el-icon-key"></el-input>
+          <el-input v-model="form.password" prefix-icon="el-icon-key" show-password></el-input>
         </el-form-item>
 
         <el-form-item style="margin-bottom: 10px;">
@@ -67,6 +67,7 @@ export default {
       const isRule = await this.$refs.formRef.validate()
       if (!isRule) return
       const res = await login(this.form)
+      if (!res) return
       Cookie.set('token', res.token)
       // 设置用户密码哈希值
       sessionStorage.setItem('lockHash', await sha256(this.form.password))
