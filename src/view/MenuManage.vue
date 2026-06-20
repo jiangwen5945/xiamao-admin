@@ -1,52 +1,45 @@
 <template>
   <div class="page">
-    <!-- 头部 -->
+    <!-- 头部：新增按钮 -->
     <div class="table-header">
       <div class="left">
-        <el-button type="primary" size="medium" @click="handleAdd">+新增</el-button>
+        <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
       </div>
     </div>
 
-    <!-- 表格内容 -->
+    <!-- 菜单列表（树形表格） -->
     <div class="table-content">
-      <el-table :data="tableData" stripe>
-        <!-- 复选框 -->
-        <el-table-column type="selection" width="55" />
-        <!-- ID -->
-        <el-table-column prop="id" label="ID"></el-table-column>
-        <!-- 名称 -->
-        <el-table-column prop="name" label="名称"></el-table-column>
-        <!-- 图标 -->
+      <el-table
+        :data="tableData"
+        stripe
+        row-key="id"
+        :tree-props="{ children: 'children' }"
+        default-expand-all
+      >
+        <el-table-column prop="id" label="ID" />
+        <el-table-column prop="name" label="名称" />
         <el-table-column prop="icon" label="图标">
           <template #default="scope">
             <i :class="'el-icon-' + scope.row.icon" />
           </template>
         </el-table-column>
-        <!-- 菜单类型 -->
-        <el-table-column prop="level" label="类型">
+        <el-table-column prop="path" label="路由路径" width="200" />
+        <el-table-column prop="component" label="组件路径" width="200" />
+        <el-table-column prop="sort" label="排序" width="60" />
+        <el-table-column prop="type" label="类型" width="80">
           <template #default="scope">
-            <el-button :type="scope.row.level === 1 ? 'primary' : 'success'" round size="mini">
-              {{ scope.row.level === 1 ? "菜单" : "目录" }}</el-button>
+            <el-tag :type="scope.row.type === 1 ? 'success' : ''" round size="mini">
+              {{ scope.row.type === 2 ? "菜单" : "目录" }}
+            </el-tag>
           </template>
         </el-table-column>
-        <!-- 权限角色 -->
-        <el-table-column prop="roles" label="权限角色">
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="scope">
-            <el-button type="text" size="mini" v-for="item in scope.row.roles" :key="item.index">
-              {{ item }}
-            </el-button>
+            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" />
           </template>
         </el-table-column>
-        <!-- 是否开启 -->
-        <el-table-column prop="available" label="是否开启">
-          <template slot-scope="scope">
-            <el-switch v-model="scope.row.available" :active-value="1" :inactive-value="0">
-            </el-switch>
-          </template>
-        </el-table-column>
-        <!-- 操作 -->
-        <el-table-column label="操作">
-          <template slot-scope="scope">
+        <el-table-column label="操作" width="150" fixed="right" align="center">
+          <template #default="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button type="danger" size="mini" @click="handleDelete({ id: scope.row.id })">删除</el-button>
           </template>
@@ -54,36 +47,79 @@
       </el-table>
     </div>
 
-    <!-- 弹出层 -->
-    <el-dialog :title="modalType ? '修改菜单' : '新增菜单'" :visible.sync="isVisible" :before-close="handleClose" center
-      width="30%" :destroy-on-close="true">
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="类型" prop="level">
-          <el-select v-model="formatLevel" placeholder="请选择菜单级别" style="width: 100%">
-            <el-option label="目录" :value="0" />
-            <el-option label="菜单" :value="1" />
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog
+      :title="modalType ? '修改菜单' : '新增菜单'"
+      :visible.sync="isVisible"
+      :before-close="handleClose"
+      center
+      width="40%"
+      :destroy-on-close="true"
+    >
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <!-- 上级菜单 -->
+        <el-form-item label="上级菜单" prop="parentId">
+          <el-cascader
+            v-model="form.parentId"
+            :options="tableData"
+            :props="cascaderProps"
+            placeholder="请选择上级菜单"
+            clearable
+            style="width: 100%"
+          />
+        </el-form-item>
+
+        <!-- 菜单类型：1-目录 / 2-菜单 -->
+        <el-form-item label="菜单类型" prop="type">
+          <el-select v-model="form.type" placeholder="请选择类型" style="width: 100%">
+            <el-option label="目录" :value="1" />
+            <el-option label="菜单" :value="2" />
           </el-select>
         </el-form-item>
+
+        <!-- 菜单名称 -->
         <el-form-item label="名称" prop="name">
-          <el-input v-model.number="form.name" placeholder="请输入名称"></el-input>
+          <el-input v-model="form.name" placeholder="请输入名称" />
         </el-form-item>
+
+        <!-- 图标 -->
         <el-form-item label="图标" prop="icon">
-          <el-select v-model="form.icon" placeholder="请选择或输入图标名称" clearable filterable allow-create style="width: 100%">
+          <el-select
+            v-model="form.icon"
+            placeholder="请选择图标"
+            clearable
+            filterable
+            allow-create
+            style="width: 100%"
+          >
             <el-option v-for="item in iconList" :key="item" :label="item" :value="item">
               <i :class="'el-icon-' + item" /> {{ item }}
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="权限角色" prop="roles">
-          <el-checkbox-group v-model="form.roles" size="mini">
-            <el-checkbox v-for="item in roleList" :label="item.roleName" :key="item.roleId" />
-          </el-checkbox-group>
+
+        <!-- 路由路径 -->
+        <el-form-item label="路由路径" prop="path">
+          <el-input v-model="form.path" placeholder="请输入路由路径" />
         </el-form-item>
-        <el-form-item label="是否开启">
-          <el-switch v-model="form.available" :active-value="1" :inactive-value="0">
-          </el-switch>
+
+        <!-- 组件路径 -->
+        <el-form-item label="组件路径" prop="component">
+          <el-input v-model="form.component" placeholder="请输入组件路径" />
+        </el-form-item>
+
+        <!-- 排序 -->
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="form.sort" :min="0" :max="999" />
+        </el-form-item>
+
+        <!-- 状态 -->
+        <el-form-item label="状态">
+          <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
       </el-form>
+
+      <!-- 弹窗底部按钮 -->
       <div slot="footer" class="dialog-footer">
         <el-button @click="handleClose">取 消</el-button>
         <el-button type="primary" @click="submit">确 定</el-button>
@@ -91,69 +127,144 @@
     </el-dialog>
   </div>
 </template>
- 
+
 <script>
-import {
-  getMenuList,
-  deleteMenu,
-  createMenu,
-  updateMenu,
-  getRolesList,
-} from "../api";
-import { mixins } from "../mixin";
-import rules from "@/utils/rules";
+import { getMenuList, deleteMenu, createMenu, updateMenu } from "../api";
+
 export default {
   name: "MenuManage",
-  mixins: [mixins],
-  computed: {
-    formatLevel: {
-      get() {
-        if (!this.form.level && this.form.level !== 0) return "";
-        return this.form.level === 1 ? "菜单" : "目录";
-      },
-      set(newValue) {
-        this.form.level = newValue === "1" ? 1 : 0;
-      },
-    },
-  },
+
   data() {
     return {
-      iconList: ['user', 'turn-off', 's-check', 's-marketing', 'box', 's-order', 's-grid', 's-claim', 'document', 'document-copy', 'edit-outline', 'files'],
-      roleList: [],
-      queryParam: {
-        page: 1,
-        limit: 10,
-        name: "",
-      },
+      /** 表格数据（树形结构，包含 children） */
+      tableData: [],
+
+      /** 弹窗显示状态 */
+      isVisible: false,
+
+      /** 弹窗模式：0-新增 / 1-编辑 */
+      modalType: 0,
+
+      /** 表单初始快照，用于关闭弹窗时重置 */
+      initForm: null,
+
+      /** Element UI 图标列表 */
+      iconList: [
+        'user', 'turn-off', 's-check', 's-marketing', 'box',
+        's-order', 's-grid', 's-claim', 'document', 'document-copy',
+        'edit-outline', 'files',
+      ],
+
+      /** 表单数据 */
       form: {
-        name: "",
-        roles: [],
-        icon: "",
-        level: "",
-        available: false,
+        parentId: null, // 上级菜单 ID
+        type: 1,        // 类型：1-目录 / 2-菜单
+        name: "",       // 菜单名称
+        icon: "",       // 图标名称
+        path: "",       // 路由路径
+        component: "",  // 组件路径
+        sort: 0,        // 排序号
+        status: 1,      // 状态：0-禁用 / 1-启用
       },
-      rules: rules,
+
+      /** 表单校验规则 */
+      rules: {
+        name: [{ required: true, message: '名称不能为空', trigger: 'blur' }],
+        type: [{ required: true, message: '类型不能为空', trigger: 'change' }],
+        path: [{ required: true, message: '路由路径不能为空', trigger: 'blur' }],
+      },
     };
   },
-  mounted() {
-    getRolesList().then((res) => (this.roleList = res.list)); // 获取角色列表数据
+
+  computed: {
+    /** 级联选择器的字段映射配置 */
+    cascaderProps() {
+      return {
+        value: 'id',
+        label: 'name',
+        children: 'children',
+        checkStrictly: true,
+        emitPath: false,
+      }
+    },
   },
+
+  created() {
+    // 初始化获取菜单列表
+    this.getData()
+    // 保存表单初始状态，用于重置
+    this.initForm = JSON.parse(JSON.stringify(this.form))
+  },
+
+  activated() {
+    // keep-alive 激活时重新获取数据
+    this.getData()
+  },
+
   methods: {
-    getDataApi() {
-      return getMenuList(this.queryParam);
+    /** 获取菜单列表 */
+    async getData() {
+      const { list } = await getMenuList();
+      this.tableData = list;
     },
-    deleteApi(id) {
-      return deleteMenu(id);
+
+    /** 删除菜单 */
+    handleDelete(id) {
+      this.$confirm('确定删除?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      })
+        .then(() => {
+          deleteMenu(id).then(() => {
+            this.$message({ type: 'success', message: '删除成功!' });
+            this.getData();
+          });
+        })
+        .catch((err) => {
+          if (err === 'cancel') return;
+          this.$message({ type: 'error', message: err });
+        });
     },
-    createApi(data) {
-      return createMenu(data);
+
+    /** 编辑菜单：打开弹窗并填充当前行数据 */
+    handleEdit(row) {
+      this.isVisible = true;
+      this.modalType = 1;
+      this.form = JSON.parse(JSON.stringify(row));
     },
-    updateApi(data) {
-      return updateMenu(data);
+
+    /** 新增菜单：打开弹窗，表单使用默认值 */
+    handleAdd() {
+      this.isVisible = true;
+      this.modalType = 0;
+    },
+
+    /** 提交表单 */
+    submit() {
+      this.$refs.form.validate(async (valid) => {
+        if (!valid) return;
+
+        if (this.modalType === 0) {
+          await createMenu(this.form);
+        } else {
+          await updateMenu(this.form);
+        }
+        this.getData();
+        this.handleClose();
+        this.$message({
+          type: 'success',
+          message: this.modalType === 0 ? '添加成功' : '编辑成功',
+        });
+      });
+    },
+
+    /** 关闭弹窗并重置表单 */
+    handleClose() {
+      this.form = { ...this.initForm };
+      this.isVisible = false;
+      this.$refs.form.clearValidate();
     },
   },
 };
 </script>
- 
-<style scoped lang="scss"></style>
- 

@@ -87,7 +87,7 @@ export const updateRole = (data) => {
 
 // 菜单
 export const getMenuList = (data) => {
-  return http.get("/menu/getMenuList", data);
+  return http.get("/menu/list", data);
 };
 export const createMenu = (data) => {
   return http.post("/menu/add", data);
