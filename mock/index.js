@@ -59,10 +59,10 @@ Mock.mock('/api/role/add', 'post', roleApi.createRole)
 Mock.mock('/api/role/edit', 'post', roleApi.updateRole)
 
 // 菜单管理
-Mock.mock(/api\/menu\/getMenuList/, menuApi.getMenuList)
-Mock.mock('/api/menu/del', 'post', menuApi.deleteMenu)
+Mock.mock('/api/menu/list', menuApi.getMenuList)
+Mock.mock('/api/menu/delete', 'post', menuApi.deleteMenu)
 Mock.mock('/api/menu/add', 'post', menuApi.createMenu)
-Mock.mock('/api/menu/edit', 'post', menuApi.updateMenu)
+Mock.mock('/api/menu/update', 'post', menuApi.updateMenu)
 
 // 部门管理
 Mock.mock(/api\/class\/getClassList/, classApi.getClassList)

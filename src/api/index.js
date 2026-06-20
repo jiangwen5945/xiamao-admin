@@ -1,6 +1,6 @@
 import http from "../utils/request";
 
-// 用户登录
+// 登录
 export const login = (data) => {
   return http.post("/auth/login", data);
 };
@@ -9,11 +9,6 @@ export const getUserMenus = () => {
 };
 export const getUserDetail = (params) => {
   return http.get("/user/detail", { params });
-};
-
-// 请求首页数据
-export const getData = () => {
-  return http.get("/home/getData");
 };
 
 // 用户
@@ -30,17 +25,47 @@ export const delUser = (data) => {
   return http.post("/user/delete", data);
 };
 
+// 角色
+export const getRoleList = (data) => {
+  return http.get("/role/list", data);
+};
+export const createRole = (data) => {
+  return http.post("/role/add", data);
+};
+export const deleteRole = (data) => {
+  return http.post("/role/delete", data);
+};
+export const updateRole = (data) => {
+  return http.post("/role/update", data);
+};
+
+// 菜单
+export const getMenuList = (data) => {
+  return http.get("/menu/list", data);
+};
+export const createMenu = (data) => {
+  return http.post("/menu/add", data);
+};
+export const deleteMenu = (data) => {
+  return http.post("/menu/delete", data);
+};
+export const updateMenu = (data) => {
+  return http.post("/menu/update", data);
+};
+
+// **************************************************************************** //
+
+// 请求首页数据
+export const getData = () => {
+  return http.get("/home/getData");
+};
+
 // 用户登录权限
 export const userPermission = (data) => {
   return http.post("/permissionApi/getMenu", data);
 };
 export const saveUserInfo = (data) => {
   return http.post("/permissionApi/saveUserInfo", data);
-};
-
-// 权限
-export const getAuthorityList = () => {
-  return http.get("/authority/getAuthorityList");
 };
 
 // 商品
@@ -69,34 +94,6 @@ export const updateGoodsCategory = (data) => {
 };
 export const deleteGoodsCategory = (data) => {
   return http.post("/goods/category/del", data);
-};
-
-// 角色
-export const getRolesList = (data) => {
-  return http.get("/role/list", data);
-};
-export const createRole = (data) => {
-  return http.post("/role/add", data);
-};
-export const deleteRole = (data) => {
-  return http.post("/role/del", data);
-};
-export const updateRole = (data) => {
-  return http.post("/role/edit", data);
-};
-
-// 菜单
-export const getMenuList = (data) => {
-  return http.get("/menu/list", data);
-};
-export const createMenu = (data) => {
-  return http.post("/menu/add", data);
-};
-export const deleteMenu = (data) => {
-  return http.post("/menu/del", data);
-};
-export const updateMenu = (data) => {
-  return http.post("/menu/edit", data);
 };
 
 // 部门

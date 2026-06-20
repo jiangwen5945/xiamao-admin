@@ -16,7 +16,7 @@
         :tree-props="{ children: 'children' }"
         default-expand-all
       >
-        <el-table-column prop="id" label="ID" />
+        <!-- <el-table-column prop="id" label="ID" /> -->
         <el-table-column prop="name" label="名称" />
         <el-table-column prop="icon" label="图标">
           <template #default="scope">
@@ -58,11 +58,12 @@
     >
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <!-- 上级菜单 -->
-        <el-form-item label="上级菜单" prop="parentId">
+        <el-form-item label="上级菜单" prop="parent_id">
           <el-cascader
-            v-model="form.parentId"
-            :options="tableData"
+            v-model="form.parent_id"
+            :options="menuTreeOptions"
             :props="cascaderProps"
+            :disabled="parentDisabled"
             placeholder="请选择上级菜单"
             clearable
             style="width: 100%"
@@ -139,6 +140,9 @@ export default {
       /** 表格数据（树形结构，包含 children） */
       tableData: [],
 
+      /** API 返回的扁平菜单列表 */
+      flatList: [],
+
       /** 弹窗显示状态 */
       isVisible: false,
 
@@ -146,7 +150,7 @@ export default {
       modalType: 0,
 
       /** 表单初始快照，用于关闭弹窗时重置 */
-      initForm: null,
+      defaultForm: null,
 
       /** Element UI 图标列表 */
       iconList: [
@@ -157,8 +161,8 @@ export default {
 
       /** 表单数据 */
       form: {
-        parentId: null, // 上级菜单 ID
-        type: 1,        // 类型：1-目录 / 2-菜单
+        parent_id: null, // 上级菜单 ID
+        type: 2,        // 类型：1-目录 / 2-菜单
         name: "",       // 菜单名称
         icon: "",       // 图标名称
         path: "",       // 路由路径
@@ -187,13 +191,31 @@ export default {
         emitPath: false,
       }
     },
+
+    /** 上级菜单选项：只保留类型为目录（type === 1）的节点 */
+    menuTreeOptions() {
+      const filterTree = (list) =>
+        list
+          .filter((item) => item.type === 1)
+          .map((item) => ({
+            ...item,
+            children: item.children ? filterTree(item.children) : undefined,
+          }))
+      return filterTree(this.tableData)
+    },
+
+    /** 上级菜单是否禁用：新增时始终可用；编辑时，目录且无上级才禁用 */
+    parentDisabled() {
+      if (this.modalType === 0) return false
+      return this.form.type === 1 && !this.form.parent_id
+    },
   },
 
   created() {
     // 初始化获取菜单列表
     this.getData()
     // 保存表单初始状态，用于重置
-    this.initForm = JSON.parse(JSON.stringify(this.form))
+    this.defaultForm = JSON.parse(JSON.stringify(this.form))
   },
 
   activated() {
@@ -202,21 +224,37 @@ export default {
   },
 
   methods: {
-    /** 获取菜单列表 */
+    /** 获取菜单列表：后端返回扁平数据，前端组装树 */
     async getData() {
       const { list } = await getMenuList();
-      this.tableData = list;
+      this.flatList = list;
+      this.tableData = this.buildTree(list);
+    },
+
+    /** 将扁平菜单列表组装为树结构 */
+    buildTree(menus, parentId = null) {
+      return menus
+        .filter((m) => m.parent_id === parentId)
+        .map((m) => ({
+          ...m,
+          children: this.buildTree(menus, m.id),
+        }))
     },
 
     /** 删除菜单 */
-    handleDelete(id) {
+    handleDelete(row) {
+      const { id } = row
+      // 有子菜单时禁止删除
+      if (this.flatList.some((m) => m.parent_id === id)) {
+        return this.$message({ type: 'warning', message: '该菜单下有子菜单，无法删除' })
+      }
       this.$confirm('确定删除?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
       })
         .then(() => {
-          deleteMenu(id).then(() => {
+          deleteMenu({ id }).then(() => {
             this.$message({ type: 'success', message: '删除成功!' });
             this.getData();
           });
@@ -261,7 +299,7 @@ export default {
 
     /** 关闭弹窗并重置表单 */
     handleClose() {
-      this.form = { ...this.initForm };
+      this.form = JSON.parse(JSON.stringify(this.defaultForm));
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },
