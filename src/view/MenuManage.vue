@@ -35,7 +35,16 @@
         </el-table-column>
         <el-table-column prop="status" label="状态" width="80">
           <template #default="scope">
-            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" />
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'" size="mini">
+              {{ scope.row.status === 1 ? '生效' : '失效' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="show_sidebar" label="菜单栏" width="100" align="center">
+          <template #default="scope">
+            <el-tag :type="scope.row.show_sidebar === 1 ? 'success' : 'danger'" size="mini">
+              {{ scope.row.show_sidebar === 1 ? '显示' : '隐藏' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right" align="center">
@@ -105,7 +114,7 @@
         </el-form-item>
 
         <!-- 组件路径 -->
-        <el-form-item label="组件路径" prop="component">
+        <el-form-item v-if="form.type === 2" label="组件路径" prop="component">
           <el-input v-model="form.component" placeholder="请输入组件路径" />
         </el-form-item>
 
@@ -117,6 +126,11 @@
         <!-- 状态 -->
         <el-form-item label="状态">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+
+        <!-- 是否在侧边菜单栏显示 -->
+        <el-form-item label="菜单栏">
+          <el-switch v-model="form.show_sidebar" :active-value="1" :inactive-value="0"/>
         </el-form-item>
       </el-form>
 
@@ -171,6 +185,7 @@ export default {
         component: "",  // 组件路径
         sort: 0,        // 排序号
         status: 1,      // 状态：0-禁用 / 1-启用
+        show_sidebar: 1, // 菜单栏显示：0-隐藏 / 1-显示
       },
 
       /** 表单校验规则 */
@@ -218,6 +233,15 @@ export default {
     this.getData()
     // 保存表单初始状态，用于重置
     this.defaultForm = JSON.parse(JSON.stringify(this.form))
+  },
+
+  // 当菜单类型为目录时，组件路径设置为空
+  watch: {
+    'form.type'(type) {
+      if (type === 1) {
+        this.form.component = ''
+      }
+    },
   },
 
   activated() {
