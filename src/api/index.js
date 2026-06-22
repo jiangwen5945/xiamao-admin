@@ -25,6 +25,9 @@ export const editUser = (data) => {
 export const delUser = (data) => {
   return http.post("/user/delete", data);
 };
+export const detail = (data) => {
+  return http.get("/user/detail", data);
+};
 
 // 角色
 export const getRoleList = (data) => {
