@@ -1,148 +1,150 @@
 <template>
   <div class="page">
-    <el-card class="box-card">
-      <h3>基本信息</h3>
-      <el-form
-        :model="form"
-        status-icon
-        :rules="rules"
-        ref="formRef"
-        label-width="150px"
-      >
-        <el-form-item prop="头像" label="头像">
-
-          <el-upload
-            class="avatar-uploader"
-            action="/api/uploadFiles"
-            :show-file-list="false"
-            accept=".png, .jepg, .jpg, .webp"
-            :on-success="handleAvatarSuccess"
-            :before-upload="beforeAvatarUpload"
-          >
-            <img v-if="form.avatar" :src="form.avatar" class="avatar" />
-            <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-          </el-upload>
-        </el-form-item>
-        <el-form-item prop="nickName" label="昵称">
-          <el-input
-            v-model="form.nickName"
-            prefix-icon="el-icon-postcard"
-            style="width: 30%;"
-          ></el-input>
-        </el-form-item>
-        <el-form-item prop="userName" label="用户名" >
-          <el-input
-            v-model="form.userName"
-            prefix-icon="el-icon-user"
-            style="width: 30%;"
-            disabled
-          ></el-input>
-        </el-form-item>
-        <el-form-item prop="role" label="角色" >
-          <el-input
-            v-model="form.role"
-            prefix-icon="el-icon-s-check"
-            style="width: 30%;"
-            disabled
-          ></el-input>
-        </el-form-item>
-        <el-form-item prop="password" label="密码">
-          <el-input
-            type="password"
-            v-model="form.passWord"
-            prefix-icon="el-icon-key"
-            style="width: 30%;"
-          ></el-input>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button
-            type="primary"
-            @click="handleSave()"
-            :disabled="!isSubmit"
-          >保存修改</el-button
-          >
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <div class="profile-header">
+      <img v-if="user.avatar" :src="user.avatar" class="avatar" />
+      <div class="profile-meta">
+        <h3>{{ user.nickname || '未设置昵称' }}</h3>
+        <span class="role-tags">
+          <el-tag v-for="role in user.Roles" :key="role.id" size="small">{{ role.name }}</el-tag>
+        </span>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="label">账号</span>
+        <span class="value">{{ user.username }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">性别</span>
+        <span class="value">{{ genderText }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">生日</span>
+        <span class="value">{{ user.birth || '未设置' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">邮箱</span>
+        <span class="value">{{ user.email || '未设置' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">手机号</span>
+        <span class="value">{{ user.phone || '未设置' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">部门</span>
+        <span class="value">{{ user.Department ? user.Department.name : '未分配' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">创建时间</span>
+        <span class="value">{{ user.createdAt }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">更新时间</span>
+        <span class="value">{{ user.updatedAt }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">用户状态</span>
+        <span class="value">
+          <el-tag :type="user.status === 1 ? 'success' : 'danger'" size="small">
+            {{ user.status === 1 ? '启用' : '禁用' }}
+          </el-tag>
+        </span>
+      </div>
+    </div>
   </div>
 </template>
  
 <script>
 
-import rules from "@/utils/rules";
+import { detail } from "@/api";
+
+function getLocalUserInfo() {
+  try {
+    return JSON.parse(localStorage.getItem('userInfo') || 'null')
+  } catch {
+    return null
+  }
+}
+
 export default {
   name: "memberView",
-  
-  created(){
-      const user = this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem("userInfo"))
-      const role = this.$store.state.tab.currentRole
-      this.form = {
-        ...user,
-        role: role ? role.name : (user.Roles && user.Roles[0] && user.Roles[0].name) || ''
-      }
-  },
-  computed:{
-    isSubmit() {
-      return !!this.form.userName && !!this.form.passWord
+
+  async created() {
+    const userInfo = this.$store.state.tab.userInfo || getLocalUserInfo()
+    if (!userInfo) return
+    try {
+      const res = await detail({ params: { id: userInfo.id } })
+      this.user = res
+    } catch {
+      this.$message?.error?.('获取用户信息失败')
     }
   },
   data() {
     return {
-      rules,
-      form: {
-        avatar: '',
-        nickName:'',
-        userName: '',
-        passWord: ''
-      },
-      
-    };
-  },
-  methods: {
-    handleAvatarSuccess(res, file) {
-      // 上传成功后图片的存储地址 
-      this.form.avatar = res.result.filesUrl
-    },
-    beforeAvatarUpload(file) {
-      const isJPG = file.type === "image/jpeg";
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isLt2M) {
-        this.$message.error("上传头像图片大小不能超过 2MB!");
-      }
-      return isLt2M;
-    },
-    async handleSave(){
-      await this.$store.dispatch('changeUserInfo', this.form)
-      this.$message.success('修改成功')
+      user: {},
     }
   },
-};
+  computed: {
+    genderText() {
+      const map = { '1': '男', '2': '女' }
+      return map[this.user.gender] || '未设置'
+    },
+  },
+}
 </script>
  
 <style lang="scss" scoped>
-.avatar-uploader {
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  width: 178px;
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
 
-  .avatar-uploader-icon {
-    font-size: 28px;
-    color: #8c939d;
-    width: 178px;
-    height: 178px;
-    line-height: 178px;
-    text-align: center;
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-meta {
+  h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
   }
+}
 
-  .avatar {
-    width: 178px;
-    height: 178px;
-    display: block;
+.role-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.role-tags .el-tag {
+  margin: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  .label {
+    flex-shrink: 0;
+    width: 80px;
+    color: #909399;
+    font-size: 14px;
+  }
+  .value {
+    color: #303133;
+    font-size: 14px;
   }
 }
 </style>
