@@ -98,19 +98,19 @@ export const deleteGoodsCategory = (data) => {
 
 // 部门
 export const getClassList = (data) => {
-  return http.get("/class/getClassList", data);
+  return http.get("/dept/list", data);
 };
 
 export const deleteClass = (data) => {
-  return http.post("/class/del", data);
+  return http.post("/dept/delete", data);
 };
 
 export const createClass = (data) => {
-  return http.post("/class/add", data);
+  return http.post("/dept/add", data);
 };
 
 export const updateClass = (data) => {
-  return http.post("/class/edit", data);
+  return http.post("/dept/update", data);
 };
 
 // 订单

@@ -53,6 +53,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态"> </el-table-column>
+        <el-table-column prop="Department" label="部门" width="120">
+          <template #default="scope">
+            {{ scope.row.Department?.name || '-' }}
+          </template>
+        </el-table-column>
         <!-- 角色标签展示 -->
         <el-table-column prop="Roles" label="角色" width="150">
           <template #default="scope">
@@ -163,8 +168,12 @@
             <el-option label="禁用" :value="0"></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="部门" prop="DeptID">
+          <el-select v-model="form.DeptID" placeholder="请选择部门" style="width: 100%" clearable>
+            <el-option v-for="item in deptList" :key="item.classId" :label="item.className" :value="item.classId"></el-option>
+          </el-select>
+        </el-form-item>
         <!-- 角色多选 -->
-         {{ this.roleList }}
         <el-form-item label="角色" prop="roles" v-if="form.roles">
           <el-checkbox-group v-model="form.roles">
             <el-checkbox
@@ -200,6 +209,7 @@ import {
   editUser,
   delUser,
   getRoleList,
+  getClassList,
   uploadFiles,
 } from "../api";
 import rules from "../utils/rules";
@@ -218,6 +228,7 @@ export default {
       isVisible: false, // 弹窗显示状态
       modalType: 0, // 0-新增 1-编辑
       roleList: [], // 角色列表
+      deptList: [], // 部门列表
       form: {}, // 表单数据
       queryParam: {
         // 查询参数
@@ -233,6 +244,8 @@ export default {
     this.getUserList();
     const { list } = await getRoleList();
     this.roleList = list
+    const deptRes = await getClassList({ page: 1, limit: 999 })
+    this.deptList = deptRes.list || deptRes
   },
   activated() {
     this.getUserList();
