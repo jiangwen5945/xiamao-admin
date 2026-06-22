@@ -54,7 +54,15 @@ export default {
       return this.$store.state.tab.isCollapse
     },
     menuArray() {
-      return this.$store.state.tab.menuArray
+      const filterMenu = (items) => {
+        return items
+          .filter(item => item.show_sidebar !== 0)
+          .map(item => ({
+            ...item,
+            children: item.children ? filterMenu(item.children) : undefined,
+          }))
+      }
+      return filterMenu(this.$store.state.tab.menuArray)
     }
   }
 }
