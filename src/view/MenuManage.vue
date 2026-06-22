@@ -154,7 +154,9 @@ export default {
 
       /** Element UI 图标列表 */
       iconList: [
-        'user', 'turn-off', 's-check', 's-marketing', 'box',
+        's-home',
+        'user', 
+        'turn-off', 's-check', 's-marketing', 'box',
         's-order', 's-grid', 's-claim', 'document', 'document-copy',
         'edit-outline', 'files',
       ],

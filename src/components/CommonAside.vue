@@ -45,10 +45,10 @@ export default {
   },
   computed: {
     hasChildren() {
-      return this.menuArray.filter(item => item.children)
+      return this.menuArray.filter(item => item.children && item.children.length)
     },
     noChildren() {
-      return this.menuArray.filter(item => !item.children && item.icon)
+      return this.menuArray.filter(item => (!item.children || !item.children.length) && item.icon)
     },
     isCollapse() {
       return this.$store.state.tab.isCollapse

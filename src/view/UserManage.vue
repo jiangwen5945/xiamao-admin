@@ -62,7 +62,7 @@
               size="mini"
               style="margin-right: 4px"
             >
-              {{ item.title }}
+              {{ item.name }}
             </el-tag>
           </template>
         </el-table-column>
@@ -164,13 +164,14 @@
           </el-select>
         </el-form-item>
         <!-- 角色多选 -->
+         {{ this.roleList }}
         <el-form-item label="角色" prop="roles" v-if="form.roles">
           <el-checkbox-group v-model="form.roles">
             <el-checkbox
               v-for="item in roleList"
               :label="item.id"
               :key="item.id"
-              >{{ item.title }}</el-checkbox
+              >{{ item.name }}</el-checkbox
             >
           </el-checkbox-group>
         </el-form-item>
@@ -198,7 +199,7 @@ import {
   addUser,
   editUser,
   delUser,
-  getRolesList,
+  getRoleList,
   uploadFiles,
 } from "../api";
 import rules from "../utils/rules";
@@ -230,7 +231,8 @@ export default {
   },
   async created() {
     this.getUserList();
-    this.roleList = await getRolesList();
+    const { list } = await getRoleList();
+    this.roleList = list
   },
   activated() {
     this.getUserList();

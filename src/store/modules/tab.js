@@ -73,14 +73,15 @@ export default {
       state.menuArray = menuArray
       const fomatMenuArr = []
       menuArray.forEach(el => {
-        if (el.children) {
+        if (el.children && el.children.length) {
           el.children = el.children.map(item => ({
             ...item,
-            component: () => import(`@/view/${item.component}`)
+            component: item.component ? () => import(`@/view/${item.component}`) : undefined
           }))
           fomatMenuArr.push(...el.children)
-        } else {
-          el.component = () => import(`@/view/${el.component}`)
+        } else if (el.component) {
+          const componentPath = el.component
+          el.component = () => import(`@/view/${componentPath}`)
           fomatMenuArr.push(el)
         }
       });
