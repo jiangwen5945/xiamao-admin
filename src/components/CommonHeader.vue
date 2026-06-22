@@ -23,11 +23,10 @@
       <!-- 角色切换下拉 -->
       <el-dropdown @command="handleRoleSwitch" style="margin-right: 12px">
         <span class="el-dropdown-link">
-          {{ currentRoleId ? (userRoles.find(r => r.id === currentRoleId)?.name || '切换角色') : '全部角色' }}
+          {{ currentRole.name || '切换角色'}}
           <i class="el-icon-arrow-down el-icon--right" />
         </span>
         <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item :command="null">全部角色</el-dropdown-item>
           <el-dropdown-item
             v-for="role in userRoles"
             :key="role.id"
@@ -71,15 +70,19 @@ export default {
       return (this.userInfo && this.userInfo.Roles) || []
     },
     // 当前选中的角色 ID（通过 handleRoleSwitch 触发切换）
-    currentRoleId() {
-      const role = this.$store.state.tab.currentRole
-      return role ? role.id : null
+    currentRole() {
+      return this.$store.state.tab.currentRole || null
     }
   },
   watch: {
     // 路由变化时更新面包屑
     '$route.path'() {
       this.$store.commit('updateCrumbs', this.$route.path)
+    }
+  },
+  mounted() {
+    if (!this.currentRole && this.userRoles.length) {
+      this.$store.dispatch('switchCurrentRole', { role: this.userRoles[0], router: this.$router })
     }
   },
   methods: {
