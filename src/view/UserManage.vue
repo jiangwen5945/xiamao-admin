@@ -52,7 +52,13 @@
             <span>{{ scope.row.gender == 1 ? "男" : "女" }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态"> </el-table-column>
+        <el-table-column prop="status" label="状态"> 
+          <template #default="scope">
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'" size="mini">
+              {{ scope.row.status === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="Department" label="部门" width="120">
           <template #default="scope">
             {{ scope.row.Department?.name || '-' }}
@@ -158,16 +164,6 @@
             <el-option label="女" value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select
-            v-model="form.status"
-            placeholder="请选择状态"
-            style="width: 100%"
-          >
-            <el-option label="启用" :value="1"></el-option>
-            <el-option label="禁用" :value="0"></el-option>
-          </el-select>
-        </el-form-item>
         <el-form-item label="部门" prop="dept_id">
           <el-select v-model="form.dept_id" placeholder="请选择部门" style="width: 100%" clearable>
             <el-option v-for="item in deptList" :key="item.id" :label="item.name" :value="item.id"></el-option>
@@ -192,6 +188,14 @@
             value-format="yyyy-MM-dd"
             style="width: 100%"
           ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="账号状态" prop="status">
+          <el-switch
+            v-model="form.status"
+            :active-value="1"
+            :inactive-value="0"
+          >
+          </el-switch>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
