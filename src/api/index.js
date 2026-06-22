@@ -4,8 +4,9 @@ import http from "../utils/request";
 export const login = (data) => {
   return http.post("/auth/login", data);
 };
-export const getUserMenus = () => {
-  return http.get("/user/menus");
+export const getUserMenus = (roleId) => {
+  const params = roleId ? { roleId } : {}
+  return http.get("/user/menus", { params });
 };
 export const getUserDetail = (params) => {
   return http.get("/user/detail", { params });
@@ -53,6 +54,23 @@ export const updateMenu = (data) => {
   return http.post("/menu/update", data);
 };
 
+// 部门
+export const getClassList = (data) => {
+  return http.get("/dept/list", data);
+};
+
+export const deleteClass = (data) => {
+  return http.post("/dept/delete", data);
+};
+
+export const createClass = (data) => {
+  return http.post("/dept/add", data);
+};
+
+export const updateClass = (data) => {
+  return http.post("/dept/update", data);
+};
+
 // **************************************************************************** //
 
 // 请求首页数据
@@ -96,22 +114,7 @@ export const deleteGoodsCategory = (data) => {
   return http.post("/goods/category/del", data);
 };
 
-// 部门
-export const getClassList = (data) => {
-  return http.get("/dept/list", data);
-};
 
-export const deleteClass = (data) => {
-  return http.post("/dept/delete", data);
-};
-
-export const createClass = (data) => {
-  return http.post("/dept/add", data);
-};
-
-export const updateClass = (data) => {
-  return http.post("/dept/update", data);
-};
 
 // 订单
 export const getOrderList = (params) => {

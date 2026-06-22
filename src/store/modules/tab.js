@@ -1,5 +1,5 @@
 import {resetRouter} from '@/router'
-import { userPermission, saveUserInfo } from '@/api'
+import { getUserMenus, userPermission, saveUserInfo } from '@/api'
 export default {
   state: {
     isCollapse: false, // 控制菜单展开或关闭
@@ -15,7 +15,8 @@ export default {
       name: '首页'
     }],
     menuArray: [],
-    userInfo: ''
+    userInfo: '',
+    currentRole: JSON.parse(localStorage.getItem('currentRole') || 'null'), // 当前角色
   },
   mutations: {
     // 更新面包屑数据
@@ -61,6 +62,11 @@ export default {
       state.userInfo = val
       localStorage.setItem('userInfo', JSON.stringify(val))
     },
+    // 设置当前角色
+    setCurrentRole(state, role) {
+      state.currentRole = role
+      localStorage.setItem('currentRole', JSON.stringify(role))
+    },
     // 设置菜单数据
     setMenuArray(state, val) {
       state.menuArray = val
@@ -97,6 +103,12 @@ export default {
     }
   },
   actions:{
+    async switchCurrentRole({ commit }, { role, router }) {
+      commit('setCurrentRole', role)
+      const menus = await getUserMenus(role && role.id)
+      commit('setMenuArray', menus)
+      commit('addMenuToRouter', router)
+    },
     async changeUserInfo(ctx, data){
        // 验证用户密码
        await userPermission(data)

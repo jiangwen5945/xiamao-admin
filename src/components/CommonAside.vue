@@ -54,8 +54,7 @@ export default {
       return this.$store.state.tab.isCollapse
     },
     menuArray() {
-      // 缓存中存在则在缓存中读取，否则重新获取
-      return JSON.parse(localStorage.getItem('menuArray')) || this.$store.state.tab.menuArray
+      return this.$store.state.tab.menuArray
     }
   }
 }

@@ -13,7 +13,7 @@
             </div>
             <div class="user-info">
               <p class="name">{{ userInfo.nickname }}</p>
-              <p class="access">{{ userInfo.Roles[0]['name'] }}</p>
+              <p class="access">{{ currentRoleName || (userInfo.Roles && userInfo.Roles[0] && userInfo.Roles[0]['name']) || '' }}</p>
             </div>
           </div>
           <div class="login-info">
@@ -82,12 +82,12 @@ export default {
     };
   },
   activated() {
-    this.getHomeData(); // 缓存组件激活时候重新获取数据，避免数据不能及时更新
+    // this.getHomeData(); // 缓存组件激活时候重新获取数据，避免数据不能及时更新
     console.log("缓存组件激活时候重新获取数据");
   },
   async mounted() {
-    await this.getHomeData();
-    this.initChart();
+    // await this.getHomeData();
+    // this.initChart();
     console.log("首页mounted");
   },
   computed: {
@@ -96,6 +96,10 @@ export default {
         this.$store.state.tab.userInfo ||
         JSON.parse(localStorage.getItem("userInfo"))
       );
+    },
+    currentRoleName() {
+      const role = this.$store.state.tab.currentRole
+      return role ? role.name : null
     },
   },
   methods: {

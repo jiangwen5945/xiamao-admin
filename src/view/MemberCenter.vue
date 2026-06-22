@@ -72,10 +72,15 @@
 
 import rules from "@/utils/rules";
 export default {
-  name: "member",
+  name: "memberView",
   
   created(){
-    this.form = this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem("userInfo"))
+      const user = this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem("userInfo"))
+      const role = this.$store.state.tab.currentRole
+      this.form = {
+        ...user,
+        role: role ? role.name : (user.Roles && user.Roles[0] && user.Roles[0].name) || ''
+      }
   },
   computed:{
     isSubmit() {

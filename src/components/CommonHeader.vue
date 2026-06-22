@@ -1,24 +1,46 @@
 <template>
+  <!-- 顶部导航栏 -->
   <div class="header-container">
+    <!-- 左侧：折叠按钮 + 面包屑 -->
     <div class="l-container">
-      <el-button icon="el-icon-menu" size="mini" @click="handleBtn" style="margin-right: 20px;"></el-button>
+      <el-button icon="el-icon-menu" size="mini" @click="handleBtn" style="margin-right: 20px;" />
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: item.path }" v-for="item in crumbsList" :key="item.path">
+        <el-breadcrumb-item
+          v-for="item in crumbsList"
+          :key="item.path"
+          :to="{ path: item.path }"
+        >
           <span class="nav-text">{{ item.name }}</span>
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
+    <!-- 右侧：功能图标 + 角色切换 + 用户信息 -->
     <div class="r-container">
-      <span class="timer"> {{ currentTime }}</span>
       <div class="theme-icon">
-        <i class="el-icon-lock" @click="setLockScreen(true)"/>
-        <i :class="[isFullScreen ? 'el-icon-crop' : 'el-icon-full-screen']" @click="setFullScreen"/> 
+        <i class="el-icon-lock" @click="setLockScreen(true)" />
         <i :class="[theme === 'dark' ? 'el-icon-sunny' : 'el-icon-moon']" @click="setTheme(theme)" />
-        <i class="el-icon-bell"/>
       </div>
+      <!-- 角色切换下拉 -->
+      <el-dropdown @command="handleRoleSwitch" style="margin-right: 12px">
+        <span class="el-dropdown-link">
+          {{ currentRoleId ? (userRoles.find(r => r.id === currentRoleId)?.name || '切换角色') : '全部角色' }}
+          <i class="el-icon-arrow-down el-icon--right" />
+        </span>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item :command="null">全部角色</el-dropdown-item>
+          <el-dropdown-item
+            v-for="role in userRoles"
+            :key="role.id"
+            :command="role.id"
+          >
+            {{ role.name }}
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
+      <!-- 用户头像与名称下拉 -->
       <el-dropdown @command="handleCommand">
         <div class="el-dropdown-link avatar-box">
-          <el-avatar :src="userInfo.avatar"></el-avatar>
+          <el-avatar :src="userInfo.avatar" />
           <span class="username">{{ userInfo.username }}</span>
         </div>
         <el-dropdown-menu slot="dropdown">
@@ -29,75 +51,71 @@
     </div>
   </div>
 </template>
+
 <script>
 import Cookie from 'js-cookie'
-import { mapActions, mapState } from 'vuex';
-import { formatDate } from '@/utils/format'
+import { mapActions, mapState } from 'vuex'
+
 export default {
-  data() {
-    return {
-      timer: null,
-      currentTime: formatDate(),
+  computed: {
+    ...mapState({
+      crumbsList: state => state.tab.crumbsList,
+      theme: state => state.setting.theme,
+    }),
+    // 当前用户信息
+    userInfo() {
+      return this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem('userInfo'))
+    },
+    // 当前用户可选角色列表
+    userRoles() {
+      return (this.userInfo && this.userInfo.Roles) || []
+    },
+    // 当前选中的角色 ID（通过 handleRoleSwitch 触发切换）
+    currentRoleId() {
+      const role = this.$store.state.tab.currentRole
+      return role ? role.id : null
     }
   },
-  mounted(){
-    this.getCurrentTime()
+  watch: {
+    // 路由变化时更新面包屑
+    '$route.path'() {
+      this.$store.commit('updateCrumbs', this.$route.path)
+    }
   },
   methods: {
-    // 获取当前实时时间
-    getCurrentTime(){
-      this.timer = setInterval(() => {
-        this.currentTime = formatDate()
-      }, 1000);
-    },
-    // 处理下拉菜单选项中的事件
-    handleCommand(command) {
-      if (command === 'logout') {
-        Cookie.remove('token')  // 退出清除token
-        localStorage.removeItem('menuArray')
-        localStorage.removeItem('userInfo')
-        this.$message.success('退出成功!');
-        this.$router.push('/login')
-      }
-      if(command === 'member') {
-        if(this.$route.path === '/member') return
-        this.$router.push('/member')
-      }
-    },
-    // 折叠侧边菜单栏
+    // 折叠/展开侧边菜单
     handleBtn() {
       this.$store.commit('handleCollapseMenu')
     },
-    ...mapActions('setting',[
-      'setLockScreen',
-      'setFullScreen',
-      'setTheme'
-    ])
-  },
-  computed: {
-    ...mapState({
-      navList: state => state.tab.navList,
-      crumbsList: state => state.tab.crumbsList,
-      theme: state => state.setting.theme,
-      isFullScreen: state => state.setting.isFullScreen,
-    }),
-    userInfo() {
-      return this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem('userInfo'))
-    }
-  },
-  watch:{
-    '$route.path'(newVal, oldVal) {
-      if(newVal !== oldVal){
-        // 根据当前路由地址更新面包屑
-        this.$store.commit('updateCrumbs', newVal)
+    // 切换当前角色
+    handleRoleSwitch(roleId) {
+      const role = roleId ? this.userRoles.find(r => r.id === roleId) : null
+      this.$store.dispatch('switchCurrentRole', { role, router: this.$router })
+        .then(() => {
+          if (!this.$route.matched.length || this.$route.path === '*') {
+            this.$router.push('/home')
+          }
+        })
+    },
+    // 处理用户下拉菜单事件（个人中心 / 退出）
+    handleCommand(command) {
+      if (command === 'logout') {
+        Cookie.remove('token')
+        localStorage.removeItem('menuArray')
+        localStorage.removeItem('userInfo')
+        localStorage.removeItem('currentRole')
+        this.$message.success('退出成功!')
+        this.$router.push('/login')
+      }
+      if (command === 'member') {
+        if (this.$route.path === '/member') return
+        this.$router.push('/member')
       }
     },
-  },
-  beforeDestroy() {
-    // 在Vue实例销毁前，清除我们的定时器
-    if (this.timer) {
-      clearInterval(this.timer); 
-    }
+    ...mapActions('setting', [
+      'setLockScreen',
+      'setTheme'
+    ])
   }
 }
 </script>
@@ -109,6 +127,7 @@ export default {
   justify-content: space-between;
   align-items: center;
 
+  // 左侧区域
   .l-container {
     display: flex;
     align-items: center;
@@ -119,22 +138,22 @@ export default {
         font-size: 14px;
       }
 
-      &:last-child {
-        .nav-text {
-          color: #545c64;
-        }
+      &:last-child .nav-text {
+        color: #545c64;
       }
     }
   }
 
+  // 右侧区域
   .r-container {
     display: flex;
     align-items: center;
     margin-right: 20px;
-    .timer {
-      font-size: 14px;
-      color: #666;
-      width: 150px;
+
+    .el-dropdown-link {
+      cursor: pointer;
+      color: #545c64;
+      font-size: 13px;
     }
 
     .avatar-box {
@@ -142,12 +161,14 @@ export default {
       align-items: center;
       justify-content: space-between;
     }
+
     .username {
       color: #545c64;
       font-size: 12px;
       margin-left: 8px;
     }
 
+    // 功能图标
     .theme-icon {
       font-size: 20px;
       margin-right: 16px;

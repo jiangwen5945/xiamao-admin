@@ -168,13 +168,13 @@
             <el-option label="禁用" :value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="部门" prop="DeptID">
-          <el-select v-model="form.DeptID" placeholder="请选择部门" style="width: 100%" clearable>
-            <el-option v-for="item in deptList" :key="item.classId" :label="item.className" :value="item.classId"></el-option>
+        <el-form-item label="部门" prop="dept_id">
+          <el-select v-model="form.dept_id" placeholder="请选择部门" style="width: 100%" clearable>
+            <el-option v-for="item in deptList" :key="item.id" :label="item.name" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
         <!-- 角色多选 -->
-        <el-form-item label="角色" prop="roles" v-if="form.roles">
+        <el-form-item label="角色" prop="roles">
           <el-checkbox-group v-model="form.roles">
             <el-checkbox
               v-for="item in roleList"
@@ -214,7 +214,6 @@ import {
 } from "../api";
 import rules from "../utils/rules";
 import CommonExcel from "@/components/CommonExcel.vue";
-import { useCloned } from "@vueuse/core";
 
 export default {
   name: "UserManage",
@@ -229,7 +228,21 @@ export default {
       modalType: 0, // 0-新增 1-编辑
       roleList: [], // 角色列表
       deptList: [], // 部门列表
-      form: {}, // 表单数据
+      form: {
+        avatar: '',   // 头像URL
+        username: '', // 用户名
+        nickname: '', // 昵称
+        password: '', // 密码
+        email: '',    // 邮箱
+        phone: '',    // 手机号
+        gender: '',   // 性别：1-男 0-女
+        status: 1,    // 状态：1-启用 0-禁用
+        birth: '',    // 出生日期
+        Department: {},   // 所属部门对象
+        dept_id:  '', // 所属部门对象id
+        Roles: [],   // 角色对象数组
+        roles: [],    // 角色ID数组
+      }, // 表单数据
       queryParam: {
         // 查询参数
         page: 1,
@@ -241,6 +254,8 @@ export default {
     };
   },
   async created() {
+    // 备份表单初始值，用于弹窗关闭时重置
+    this.defaultForm = JSON.parse(JSON.stringify(this.form))
     this.getUserList();
     const { list } = await getRoleList();
     this.roleList = list
@@ -304,8 +319,7 @@ export default {
     handleEdit(row) {
       this.isVisible = true;
       this.modalType = 1;
-      const { cloned } = useCloned(row);
-      this.form = cloned;
+      this.form = JSON.parse(JSON.stringify(row))
       // 后端返回的 Roles 是对象数组，提取 id 转成 checkox 所需的数组
       const ids = Array.isArray(this.form.Roles)
         ? this.form.Roles.map((item) => item.id)
@@ -319,7 +333,7 @@ export default {
     handleAdd() {
       this.isVisible = true;
       this.modalType = 0;
-      this.$set(this.form, "roles", []);
+      // this.$set(this.form, "roles", []);
     },
     // 提交表单
     async submit() {
@@ -356,9 +370,9 @@ export default {
     },
     // 关闭弹窗
     handleClose() {
+      this.form = JSON.parse(JSON.stringify(this.defaultForm))
       this.isVisible = false;
       this.$refs.form.clearValidate();
-      this.form = {};
     },
     // 头像上传前校验（限制 2MB）
     beforeAvatarUpload(file) {

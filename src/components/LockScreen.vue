@@ -2,7 +2,7 @@
   <div class="lock-screen" v-show="$store.state.setting.isLockScreen">
     <div class="content-box">
       <img class="avatar" :src="userInfo.avatar" alt="" />
-      <span class="info"> {{ userInfo.roles }}: {{ userInfo.username }} </span>
+      <span class="info"> {{ displayRole }}: {{ userInfo.username }} </span>
 
       <el-input v-model="form.passWord" type="password" placeholder="请输入当前用户密码" show-password prefix-icon="el-icon-key"
         size="large" style="width: 70%">
@@ -30,6 +30,10 @@ export default {
   computed: {
     userInfo() {
       return this.$store.state.tab.userInfo || JSON.parse(localStorage.getItem('userInfo'))
+    },
+    displayRole() {
+      const role = this.$store.state.tab.currentRole
+      return role ? role.name : (this.userInfo.Roles && this.userInfo.Roles[0] && this.userInfo.Roles[0].name) || ''
     }
   },
   mounted() {
