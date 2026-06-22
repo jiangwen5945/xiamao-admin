@@ -52,6 +52,7 @@
             :data="menuList"
             show-checkbox
             node-key="id"
+            check-strictly
             :default-checked-keys="form.menuIds"
             :default-expanded-keys="form.menuIds"
             @check-change="handleCheckChange"
@@ -79,8 +80,9 @@
 </template>
 
 <script>
-import { getRoleList, deleteRole, createRole, updateRole, getMenuList } from '../api'
+import { getRoleList, deleteRole, createRole, updateRole, getMenuList, getUserMenus } from '../api'
 import rules from '@/utils/rules'
+import { mapMutations } from 'vuex'
 
 export default {
   name: 'RoleManage',
@@ -131,6 +133,7 @@ export default {
   },
 
   methods: {
+    ...mapMutations(['setMenuArray', 'addMenuToRouter']),
     /** 将扁平菜单列表组装为树结构 */
     buildTree(menus, parentId = null) {
       return menus
@@ -186,20 +189,23 @@ export default {
     },
 
     /** 提交表单 */
-    submit() {
-      this.$refs.form.validate(async valid => {
-        if (!valid) return
-        if (this.modalType === 0) {
-          await createRole(this.form)
-        } else {
-          await updateRole(this.form)
-        }
-        this.getData()
-        this.handleClose()
-        this.$message({
-          type: 'success',
-          message: this.modalType === 0 ? '添加成功' : '编辑成功'
-        })
+    async submit() {
+      const valid = await this.$refs.form.validate().catch(() => false)
+      if (!valid) return
+      if (this.modalType === 0) {
+        await createRole(this.form)
+      } else {
+        await updateRole(this.form)
+      }
+      // 刷新当前用户的菜单缓存，避免需要重新登录才能生效
+      const menus = await getUserMenus()
+      this.setMenuArray(menus)
+      this.addMenuToRouter(this.$router)
+      this.getData()
+      this.handleClose()
+      this.$message({
+        type: 'success',
+        message: this.modalType === 0 ? '添加成功' : '编辑成功'
       })
     },
 
