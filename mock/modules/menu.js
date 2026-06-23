@@ -29,6 +29,8 @@ const mockList = [
   { id: 1009, parent_id: 1008, parent_name: '文章管理', type: 2, name: '文章列表', icon: 'document-copy', path: '/article/list', component: 'views/ArticleList.vue', sort: 1, status: 1, roles: ['管理员'] },
   { id: 1010, parent_id: 1008, parent_name: '文章管理', type: 2, name: '创建文章', icon: 'edit-outline', path: '/article/create', component: 'views/CreateArticle.vue', sort: 2, status: 1, roles: ['管理员'] },
   { id: 1011, parent_id: null, parent_name: '', type: 1, name: '文件管理', icon: 'files', path: '/file', component: 'views/FileManage.vue', sort: 8, status: 1, roles: ['管理员'] },
+  { id: 1012, parent_id: null, parent_name: '', type: 1, name: '会员管理', icon: 's-custom', path: '/member', component: '', sort: 9, status: 1, roles: ['管理员'] },
+  { id: 1013, parent_id: 1012, parent_name: '会员管理', type: 2, name: '会员列表', icon: 's-order', path: '/member/list', component: 'views/MemberList.vue', sort: 1, status: 1, roles: ['管理员'] },
 ]
 
 export default {
