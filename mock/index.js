@@ -10,6 +10,7 @@ import authorityApi from './modules/authority'
 import orderApi from './modules/order'
 import articleApi from './modules/article'
 import filesApi from './modules/files'
+import memberApi from './modules/member'
 
 Mock.setup({
     timeout: '300-600'
@@ -77,6 +78,13 @@ Mock.mock('/api/article/del', 'post', articleApi.deleteArticle)
 Mock.mock('/api/article/add', 'post', articleApi.createArticle)
 Mock.mock('/api/article/edit', 'post', articleApi.updateArticle)
 
+
+// 会员管理
+Mock.mock(/api\/member\/list/, memberApi.getMemberList)
+Mock.mock('/api/member/add', 'post', memberApi.createMember)
+Mock.mock('/api/member/update', 'post', memberApi.updateMember)
+Mock.mock('/api/member/delete', 'post', memberApi.deleteMember)
+Mock.mock('/api/member/batchDelete', 'post', memberApi.batchDeleteMember)
 
 // 文件
 Mock.mock('/api/checkChunkStatus','post', filesApi.checkChunkStatus)

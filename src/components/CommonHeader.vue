@@ -71,7 +71,7 @@ export default {
     },
     // 当前选中的角色 ID（通过 handleRoleSwitch 触发切换）
     currentRole() {
-      return this.$store.state.tab.currentRole || null
+      return this.$store.state.tab.currentRole || {}
     }
   },
   watch: {

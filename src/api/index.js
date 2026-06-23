@@ -74,6 +74,20 @@ export const updateClass = (data) => {
   return http.post("/dept/update", data);
 };
 
+// 会员
+export const getMemberList = (params) => {
+  return http.get("/member/list", { params });
+};
+export const createMember = (data) => {
+  return http.post("/member/add", data);
+};
+export const updateMember = (data) => {
+  return http.post("/member/update", data);
+};
+export const deleteMember = (data) => {
+  return http.post("/member/delete", data);
+};
+
 // **************************************************************************** //
 
 // 请求首页数据
@@ -150,6 +164,7 @@ export const createArticle = (data) => {
 export const updateArticle = (data) => {
   return http.post("/article/edit", data);
 };
+
 
 // 文件
 export const checkChunkStatus = (data) => {

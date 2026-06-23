@@ -44,6 +44,11 @@ const permissionList = [{
   path: '/CreateArticle',
   name: 'CreateArticle',
   label: '创建文章'
+},
+{
+  path: '/MemberList',
+  name: 'MemberList',
+  label: '会员列表'
 }]
 
 const getPermissionLabel = name => permissionList.find(e => e.name === name).label

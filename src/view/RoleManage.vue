@@ -13,6 +13,18 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="角色ID"></el-table-column>
         <el-table-column prop="name" label="角色名称"></el-table-column>
+        <el-table-column prop="menuNames" label="菜单权限" width="500">
+          <template #default="scope">
+            <el-tag
+              v-for="(item, index) in scope.row.menuNames"
+              :key="index"
+              size="mini"
+              style="margin-right: 4px"
+            >
+              {{ item }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="是否开启">
           <template #default="scope">
             <el-switch
@@ -148,6 +160,15 @@ export default {
     async getData() {
       const { list, count } = await getRoleList()
       this.tableData = list
+      this.tableData.forEach(item => {
+        if (item.Menus) {
+          item.menuNames = item.Menus.map(v => {
+            if (v.type != 1 ) {
+              return v.name
+            }
+          }).filter(Boolean)
+        }
+      })
       this.count = count
     },
 

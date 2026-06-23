@@ -123,6 +123,22 @@ export default {
               ]
             },
             {
+              label: '会员管理',
+              icon: 's-custom',
+              children: [
+                {
+                  path: '/MemberList',
+                  name: 'MemberList',
+                  label: '会员列表',
+                  icon: 's-order',
+                  url: 'member/MemberList.vue',
+                  meta: {
+                    keepAlive: true
+                  }
+                }
+              ]
+            },
+            {
               path: '/files',
               name: 'files',
               label: '文件管理',
@@ -197,6 +213,22 @@ export default {
               meta: {
                 keepAlive: true
               }
+            },
+            {
+              label: '会员管理',
+              icon: 's-custom',
+              children: [
+                {
+                  path: '/MemberList',
+                  name: 'MemberList',
+                  label: '会员列表',
+                  icon: 's-order',
+                  url: 'member/MemberList.vue',
+                  meta: {
+                    keepAlive: true
+                  }
+                }
+              ]
             },
             {
               path: '/member',

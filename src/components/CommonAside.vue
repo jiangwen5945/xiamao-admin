@@ -10,26 +10,26 @@
         <el-image  :src="require('@/assets/logo.png')"  style="width: 30px; height: 30px; margin-right: 6px"></el-image>
         <span v-show="!isCollapse">瞎猫管理系统</span>
       </el-menu-item>
-      <!-- 没有二级菜单 -->
-      <el-menu-item :index="item.path" v-for="item in noChildren" :key="item.path" @click="handleUrl(item)">
-          <i :class="`el-icon-${item.icon}`"></i>
-          <span slot="title">{{item.name}}</span>
-      </el-menu-item>
-      <!-- 有二级菜单 -->
-      <el-submenu :index="item.path" v-for="item in hasChildren" :key="item.path">
-          <template slot="title">
+      <template v-for="item in menuArray">
+        <el-submenu v-if="item.children && item.children.length" :key="`${item.path}-submenu`" :index="item.path">
+            <template slot="title">
+              <i :class="`el-icon-${item.icon}`"></i>
+              <span slot="title">{{item.name}}</span>
+            </template>
+            <el-menu-item-group>
+              <el-menu-item :index="subItem.path" @click="handleUrl(subItem)" v-for="subItem in item.children" :key="subItem.path">
+                  <template slot="title">
+                      <i :class="`el-icon-${subItem.icon}`"></i>
+                      <span slot="title"> {{subItem.name}}</span>
+                  </template>
+              </el-menu-item>
+            </el-menu-item-group>
+        </el-submenu>
+        <el-menu-item v-else-if="item.icon" :key="`${item.path}-item`" :index="item.path" @click="handleUrl(item)">
             <i :class="`el-icon-${item.icon}`"></i>
             <span slot="title">{{item.name}}</span>
-          </template>
-          <el-menu-item-group>
-            <el-menu-item :index="subItem.path"  @click="handleUrl(subItem)" v-for="subItem in item.children" :key="subItem.path">
-                <template slot="title">
-                    <i :class="`el-icon-${subItem.icon}`"></i>
-                    <span slot="title"> {{subItem.name}}</span>
-                </template>
-            </el-menu-item>
-          </el-menu-item-group>
-      </el-submenu>
+        </el-menu-item>
+      </template>
   </el-menu>
 </template>
 <script>
@@ -44,22 +44,18 @@ export default {
     }
   },
   computed: {
-    hasChildren() {
-      return this.menuArray.filter(item => item.children && item.children.length)
-    },
-    noChildren() {
-      return this.menuArray.filter(item => (!item.children || !item.children.length) && item.icon)
-    },
     isCollapse() {
       return this.$store.state.tab.isCollapse
     },
     menuArray() {
+      const sortBy = (a, b) => (a.sort ?? 0) - (b.sort ?? 0)
       const filterMenu = (items) => {
         return items
           .filter(item => item.show_sidebar !== 0)
+          .sort(sortBy)
           .map(item => ({
             ...item,
-            children: item.children ? filterMenu(item.children) : undefined,
+            children: item.children ? filterMenu(item.children).sort(sortBy) : undefined,
           }))
       }
       return filterMenu(this.$store.state.tab.menuArray)
