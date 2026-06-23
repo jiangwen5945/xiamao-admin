@@ -41,7 +41,7 @@
      <div class="table-header">
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
-        <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleBatchDelete">批量删除</el-button>
+        <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleDelete(selectedIds)">批量删除</el-button>
       </div>
     </div>
 
@@ -382,15 +382,18 @@ export default {
       this.queryParam.page = 1
       this.getList()
     },
-    handleDelete(row) {
-      this.$confirm("确定删除?", "提示", {
+    handleDelete(ids) {
+      if (!Array.isArray(ids)) ids = [ids.id]
+      if (!ids.length) return
+      this.$confirm(`确定删除选中的 ${ids.length} 个商品?`, "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
       })
         .then(() => {
-          deleteProduct({ id: row.id }).then(() => {
+          deleteProduct({ ids }).then(() => {
             this.$message({ type: "success", message: "删除成功!" });
+            this.selectedIds = [];
             this.getList();
           });
         })
@@ -398,23 +401,6 @@ export default {
           if (err === "cancel") return;
           this.$message({ type: "error", message: err });
         });
-    },
-    async handleBatchDelete() {
-      if (!this.selectedIds.length) return
-      try {
-        await this.$confirm("确定批量删除选中商品?", "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning"
-        })
-        await deleteProduct({ ids: this.selectedIds })
-        this.$message({ type: "success", message: "批量删除成功" })
-        this.selectedIds = []
-        this.getList()
-      } catch (err) {
-        if (err === "cancel") return
-        this.$message({ type: "error", message: err })
-      }
     },
     handleDetail(row) {
       this.currentDetail = row
