@@ -194,6 +194,11 @@ export default {
         type: [{ required: true, message: '类型不能为空', trigger: 'change' }],
         path: [{ required: true, message: '路由路径不能为空', trigger: 'blur' }],
       },
+      queryParam: {
+        // 查询参数
+        page: 1,
+        pageSize: 99,
+      },
     };
   },
 
@@ -252,7 +257,7 @@ export default {
   methods: {
     /** 获取菜单列表：后端返回扁平数据，前端组装树 */
     async getData() {
-      const { list } = await getMenuList();
+      const { list } = await getMenuList(this.queryParam);
       this.flatList = list;
       this.tableData = this.buildTree(list);
     },

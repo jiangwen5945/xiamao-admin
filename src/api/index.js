@@ -30,8 +30,8 @@ export const detail = (data) => {
 };
 
 // 角色
-export const getRoleList = (data) => {
-  return http.get("/role/list", data);
+export const getRoleList = (params) => {
+  return http.get("/role/list", { params });
 };
 export const createRole = (data) => {
   return http.post("/role/add", data);
@@ -44,8 +44,8 @@ export const updateRole = (data) => {
 };
 
 // 菜单
-export const getMenuList = (data) => {
-  return http.get("/menu/list", data);
+export const getMenuList = (params) => {
+  return http.get("/menu/list", { params });
 };
 export const createMenu = (data) => {
   return http.post("/menu/add", data);
@@ -58,8 +58,8 @@ export const updateMenu = (data) => {
 };
 
 // 部门
-export const getClassList = (data) => {
-  return http.get("/dept/list", data);
+export const getClassList = (params) => {
+  return http.get("/dept/list", { params });
 };
 
 export const deleteClass = (data) => {
