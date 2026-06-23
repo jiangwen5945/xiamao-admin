@@ -1,200 +1,235 @@
+<!--
+Excel 导入导出通用组件
+
+功能：
+  - 导入 .xls/.xlsx 文件，解析为 JSON 数据
+  - 导出当前表格数据为 .xlsx 文件
+
+使用方式：
+  <CommonExcel
+    :table-data="list"
+    :loading="loading"
+    filename="用户列表"
+    @import-success="onImportSuccess"
+    @update:loading="loading = $event"
+  />
+
+Props：
+  tableData  - Array   - 表格数据源（导出用）
+  loading    - Boolean - 加载状态（配合 .sync 或 v-model）
+  filename   - String  - 导出文件名前缀，默认 "xlsxxlsx"
+
+Events：
+  import-success(data) - 导入成功，data 为解析后的数据数组
+  update:loading(val)  - 更新 loading 状态
+
+依赖：
+  - XLSX      - Excel 文件解析
+  - dayjs     - 日期格式化
+  - ../api    - importExcel 接口
+  - @/vendor/Export2Excel - 导出工具（动态导入）
+-->
 <template>
-    <div class="excel-box">
-        <el-upload accept=".xls,.xlsx" action="/api/importExcel" :auto-upload="true" :multiple="false" :file-list="fileList"
-            :before-upload="beforeUpload" :show-file-list="false" :on-change="fileChange" :on-success="handleSuccess">
-            <el-button type="file" size="medium">导入excel</el-button>
-        </el-upload>
-        <el-button type="file" size="medium" @click="exportExcelFn">导出excel</el-button>
-    </div>
+  <div class="excel-box">
+    <el-upload
+      accept=".xls,.xlsx"
+      action="/api/importExcel"
+      :auto-upload="true"
+      :multiple="false"
+      :before-upload="beforeUpload"
+      :show-file-list="false"
+      :on-change="fileChange"
+      :on-success="handleSuccess"
+    >
+      <el-button type="file" size="medium">导入excel</el-button>
+    </el-upload>
+    <el-button type="file" size="medium" @click="exportExcelFn"
+      >导出excel</el-button
+    >
+  </div>
 </template>
 
 <script>
-import { importExcel } from '../api'
-import * as XLSX from "xlsx"; // 导入excel插件
+import { importExcel } from "../api";
+import * as XLSX from "xlsx";
+import dayjs from "dayjs";
+
 export default {
-    data() {
-        return {
-            fileList: [], //解析导入后的excel数据
-            files:null,
-            excelData:{} // 发送给后端保存的导入Excel数据
+  data() {
+    return {
+      files: null, // 待上传的原始 File 对象
+      excelData: {}, // 解析后的 Excel 数据（header + results）
+    };
+  },
+  props: {
+    tableData: Array, // 表格数据源，用于导出
+    loading: Boolean, // 加载状态
+    filename: {
+      type: String,
+      default: "xlsxxlsx",
+    },
+  },
+  methods: {
+    /** 从父组件 el-table 的 refTable 引用中提取表头配置 */
+    getTableHeader() {
+      const tableHeader = [];
+      if (
+        !this.$parent.$refs.refTable ||
+        !this.$parent.$refs.refTable.$children
+      )
+        return;
+
+      this.$parent.$refs.refTable.$children.forEach((e) => {
+        if (e.$children.length !== 0) {
+          e.$children.forEach((v) => {
+            if (v.label !== undefined && v.prop !== undefined) {
+              tableHeader.push({ key: v.prop, name: v.label });
+            }
+          });
         }
+        if (e.label !== undefined && e.prop !== undefined) {
+          tableHeader.push({ key: e.prop, name: e.label });
+        }
+      });
+      return tableHeader;
     },
-    props:['tableData','loading'],
-    mounted() {
-        this.getTableHeader()
+
+    /** 导出当前表格数据为 Excel 文件 */
+    exportExcelFn() {
+      const xlsHeader = this.getTableHeader();
+      import("@/vendor/Export2Excel").then((excel) => {
+        const list = this.tableData;
+        const tHeader = xlsHeader.map((obj) => obj.name);
+        const data = list.map((obj) => {
+          return xlsHeader.map((v) => obj[v.key]);
+        });
+        excel.export_json_to_excel({
+          header: tHeader,
+          data,
+          filename: this.filename + "_" + this.getDateStr(),
+          autoWidth: true,
+          bookType: "xlsx",
+        });
+      });
     },
-    methods: {
-        // 获取table表格头
-        getTableHeader() {
-            // 导出的列顺序和数组顺序一致，key为数据中的属性，name为导出后的列名
-            const tableHeader = []
-            if (!this.$parent.$refs.refTable && !this.$parent.$refs.refTable.$children) return
 
+    /** 上传前校验文件格式和大小 */
+    beforeUpload(file) {
+      const isType = file.type === "application/vnd.ms-excel";
+      const isTypeComputer =
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      const fileType = isType || isTypeComputer;
+      if (!fileType) {
+        this.$message.error("上传文件只能是 xls/xlsx 格式！");
+      }
+      const fileLimit = file.size / 1024 / 1024 < 10;
+      if (!fileLimit) {
+        this.$message.error("上传文件大小不超过 10M！");
+      }
+      return fileType && fileLimit;
+    },
 
-            this.$parent.$refs.refTable.$children.forEach(e => {
-                // 如果存在嵌套表格（多级表头）
-                if (e.$children.length !== 0) {
-                    e.$children.forEach(v => {
-                        if (v.label !== undefined && v.prop !== undefined) {
-                            tableHeader.push({
-                                key: v.prop,
-                                name: v.label
-                            })
-                        }
-                    })
-                }
-                if (e.label !== undefined && e.prop !== undefined) {
-                    tableHeader.push({
-                        key: e.prop,
-                        name: e.label
-                    })
-                }
-            })
-            return tableHeader
-        },
+    /** 导入成功：解析数据 -> 提交后端 -> 通知父组件 */
+    async handleSuccess() {
+      this.readerData(this.files);
+      await importExcel(this.excelData);
+      this.$emit("import-success", this.transExcel(this.excelData.results));
+      this.$emit("update:loading", false);
+      this.$message.success("上传成功");
+    },
 
-        // 导出表格
-        exportExcelFn() {
-            // 获取当前表格的表头
-            const xlsHeader = this.getTableHeader()
-            // 调用方法导出
-            import('@/vendor/Export2Excel').then(excel => {
-                const list = this.tableData // 要导出的数组对象
-                const tHeader = xlsHeader.map(obj => obj.name) // 遍历出表头
-                const data = list.map((obj, index) => {
-                    // obj 为每一行数据对象
-                    return xlsHeader.map(v => {
-                        // 自定义对每一列数据进行处理
-                        // if (v.key === 'id') return index + 1
-                        // if (v.key === 'formOfEmployment') return this.formatEmployeeFn(obj[v.key])
-                        // if (v.key === 'timeOfEntry') return parseTime(obj[v.key], '{y}-{m}-{d}')
-                        return obj[v.key]
-                    })
-                })
-                // 开始导出
-                excel.export_json_to_excel({
-                    header: tHeader, // 导出的表头，['id', '姓名']
-                    data, // 导出的数据，数组套数组格式。[['1', '张三'], ['2', '李四']]
-                    filename: 'xlsxxlsx', // 文件名
-                    autoWidth: true, // 是否自动列宽
-                    bookType: 'xlsx' // 格式
-                })
-            })
-        },
+    /** 文件选择时保存原始 File 对象 */
+    fileChange(files) {
+      if (!files.raw) return;
+      this.files = files.raw;
+    },
 
-          // 上传文件之前的钩子：判断上传文件格式、大小等，若返回false则停止上传
-        beforeUpload(file) {
-            //文件类型
-            const isType = file.type === 'application/vnd.ms-excel'
-            const isTypeComputer = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            const fileType = isType || isTypeComputer
-            if (!fileType) {
-                this.$message.error('上传文件只能是xls/xlsx格式！')
-            }
-            // 文件大小限制为10M
-            const fileLimit = file.size / 1024 / 1024 < 10;
-            if (!fileLimit) {
-                this.$message.error('上传文件大小不超过10M！');
-            }
-            return fileType && fileLimit
-        },
+    /** 将导入的 Excel 行数据按表头映射为组件可用的对象数组 */
+    transExcel(results) {
+      const mapHeader = {};
+      this.getTableHeader().forEach((e) => (mapHeader[e.name] = e.key));
+      return results.map((item) => {
+        const obj = {};
+        Object.keys(item).forEach((k) => {
+          const key = mapHeader[k];
+          if (key) obj[key] = this.parseExcelValue(item[k]);
+        });
+        return obj;
+      });
+    },
 
-        // 导入excel成功事件
-        async handleSuccess(e) {
-            this.readerData(this.files)
-            const res = await importExcel(this.excelData) // 发送后端需要保存导入表格数据
-            // 往当前 table 追加导入数据
-            this.tableData.unshift(...this.transExcel(this.excelData.results))
-            console.log(this.tableData);
-            this.$emit('update:loading', false)
-            this.$message.success('上传成功')
-        },
+    /** 解析单元格值：数字日期序列号自动转为日期字符串 */
+    parseExcelValue(value) {
+      if (typeof value === "number" && value > 1 && value < 300000) {
+        return this.formatExcelDate(value);
+      }
+      return value;
+    },
 
-        // 上传文件变动时
-        fileChange(files) {
-            if (!files.raw) return
-            this.files = files.raw
-        },
+    /** 保存解析后的 Excel 原始数据 */
+    generateData({ header, results }) {
+      this.excelData.header = header;
+      this.excelData.results = results;
+    },
 
-        // excel数据转提交格式
-        transExcel(results) {
-            // const userRelations = {
-            //   ID: 'mobile',
-            //   姓名: 'username'
-            // }
-            const mapHeader = {}
-            this.getTableHeader().forEach(e => mapHeader[e.name] = e.key)
-            const arr = []
-            results.forEach(item => {
-                const obj = {}
-                const contentKeys = Object.keys(item)
-                contentKeys.forEach(k => {
-                    const key = mapHeader[k]
-                    if (key) {
-                        // 如果时间格式为数字，则需要调用函数转换
-                        // if (key === 'timeOfEntry' || key === 'correctionTime') {
-                        //   item[k] = formatExcelDate(item[k], '-')
-                        // }
-                        obj[key] = item[k]
-                    }
-                })
-                arr.push(obj)
-            })
-            return arr
-        },
+    /** 用 FileReader 读取 Excel 文件并解析 */
+    readerData(rawFile) {
+      this.$emit("update:loading", true);
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = e.target.result;
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const header = this.getHeaderRow(worksheet);
+          const results = XLSX.utils.sheet_to_json(worksheet);
+          this.generateData({ header, results });
+          resolve();
+        };
+        reader.readAsArrayBuffer(rawFile);
+      });
+    },
 
-        // 将导入的表格生成发送给后端保存的格式
-        generateData ({ header, results }) {
-            this.excelData.header = header
-            this.excelData.results = results
-        },
+    /** Excel 序列号数字转日期字符串（dayjs） */
+    formatExcelDate(serial, format = "YYYY-MM-DD") {
+      if (typeof serial === "number") {
+        return dayjs(
+          new Date((serial - 25567) * 86400 * 1000)
+        ).format(format);
+      }
+      return dayjs(serial).format(format);
+    },
 
-        // 渲染表格数据
-        readerData(rawFile) {
-            this.$emit('update:loading', true)
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader()
-                reader.onload = e => {
-                    const data = e.target.result
-                    const workbook = XLSX.read(data, { type: 'array' })
-                    const firstSheetName = workbook.SheetNames[0]
-                    const worksheet = workbook.Sheets[firstSheetName]
-                    const header = this.getHeaderRow(worksheet)
-                    const results = XLSX.utils.sheet_to_json(worksheet)
-                    this.generateData({ header, results })
-                    resolve()
-                }
-                reader.readAsArrayBuffer(rawFile)
-            })
-        },
+    /** 获取当天日期字符串，用于导出文件名 */
+    getDateStr() {
+      return dayjs().format("YYYYMMDD");
+    },
 
-        // 获取导入表格头
-        getHeaderRow(sheet) {
-            const headers = []
-            const range = XLSX.utils.decode_range(sheet['!ref'])
-            let C
-            const R = range.s.r
-            /* start in the first row */
-            for (C = range.s.c; C <= range.e.c; ++C) { /* walk every column in the range */
-                const cell = sheet[XLSX.utils.encode_cell({ c: C, r: R })]
-                /* find the cell in the first row */
-                let hdr = 'UNKNOWN ' + C // <-- replace with your desired default
-                if (cell && cell.t) hdr = XLSX.utils.format_cell(cell)
-                headers.push(hdr)
-            }
-            return headers
-        },
-
-    }
-}
+    /** 获取 Excel 首行列头 */
+    getHeaderRow(sheet) {
+      const headers = [];
+      const range = XLSX.utils.decode_range(sheet["!ref"]);
+      const R = range.s.r;
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const cell = sheet[XLSX.utils.encode_cell({ c: C, r: R })];
+        let hdr = "UNKNOWN " + C;
+        if (cell && cell.t) hdr = XLSX.utils.format_cell(cell);
+        headers.push(hdr);
+      }
+      return headers;
+    },
+  },
+};
 </script>
 <style lang="scss" scoped>
 .excel-box {
-    display: flex;
-    margin-left: 10px;
+  display: flex;
+  margin-left: 10px;
 
-    button {
-        margin-right: 10px;
-    }
+  button {
+    margin-right: 10px;
+  }
 }
 </style>
