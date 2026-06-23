@@ -9,6 +9,7 @@
         <CommonExcel
           :tableData="tableData"
           :loading.sync="loading"
+          filename="用户列表"
         ></CommonExcel>
       </div>
       <div class="right">
@@ -33,7 +34,7 @@
         <el-table-column
           prop="username"
           label="用户名"
-          width="150"
+          width="130"
           fixed="left"
         >
         </el-table-column>
@@ -250,7 +251,7 @@ export default {
       queryParam: {
         // 查询参数
         page: 1,
-        pageSize: 10,
+        pageSize: 9,
         username: "",
       },
       rules, // 表单校验规则
