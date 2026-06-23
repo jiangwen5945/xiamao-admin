@@ -90,34 +90,32 @@ export const saveUserInfo = (data) => {
 };
 
 // 商品
-export const getGoodsList = (params) => {
-  return http.get("/goods/getGoodsList", { params });
+export const getProductList = (params) => {
+  return http.get("/product/list", { params });
 };
-export const createGoods = (data) => {
-  return http.post("/goods/add", data);
+export const createProduct = (data) => {
+  return http.post("/product/add", data);
 };
-export const updateGoods = (data) => {
-  return http.post("/goods/edit", data);
+export const updateProduct = (data) => {
+  return http.post("/product/update", data);
 };
-export const deleteGoods = (data) => {
-  return http.post("/goods/del", data);
+export const deleteProduct = (data) => {
+  return http.post("/product/delete", data);
 };
 
 // 商品分类
 export const getGoodsCategory = (params) => {
-  return http.get("/goods/getGoodsCategory", { params });
+  return http.get("/category/list", { params });
 };
 export const createGoodsCategory = (data) => {
-  return http.post("/goods/category/add", data);
+  return http.post("/category/add", data);
 };
 export const updateGoodsCategory = (data) => {
-  return http.post("/goods/category/edit", data);
+  return http.post("/category/update", data);
 };
 export const deleteGoodsCategory = (data) => {
-  return http.post("/goods/category/del", data);
+  return http.post("/category/delete", data);
 };
-
-
 
 // 订单
 export const getOrderList = (params) => {

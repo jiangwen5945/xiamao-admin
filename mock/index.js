@@ -11,45 +11,39 @@ import orderApi from './modules/order'
 import articleApi from './modules/article'
 import filesApi from './modules/files'
 
-// 模拟延时
 Mock.setup({
     timeout: '300-600'
 })
 
-
-// 首页数据
 Mock.mock('/api/home/getData', homeApi.getStatisticalData)
 
-// 获取登陆用户菜单
 Mock.mock(/api\/permissionApi\/getMenu/,'post', permissionApi.getMenu)
 
-// 修改用户信息
 Mock.mock(/api\/permissionApi\/saveUserInfo/,'post', permissionApi.saveUserInfo)
 
-// 权限管理
 Mock.mock(/api\/authority\/getAuthorityList/, authorityApi.getAuthorityList)
 
-// 用户管理页数据
 Mock.mock('/api/user/add', 'post', userApi.createUser)
 Mock.mock('/api/user/edit', 'post', userApi.updateUser)
 Mock.mock('/api/user/del', 'post', userApi.deleteUser)
-// Mock.mock(/api\/user\/getUser/, userApi.getUserList) // 查询接口和获取数据接口为同一个，使用正则模糊匹配接口
 
 /**
  * 商品管理
  */
 
 // 商品列表
-Mock.mock(/api\/goods\/getGoodsList/, goodsApi.getGoodsList)
-Mock.mock('/api/goods/del', 'post', goodsApi.deleteGoods)
-Mock.mock('/api/goods/add', 'post', goodsApi.createGoods)
-Mock.mock('/api/goods/edit', 'post', goodsApi.updateGoods)
+Mock.mock(/api\/product\/list/, goodsApi.getGoodsList)
+Mock.mock('/api/product/delete', 'post', goodsApi.deleteGoods)
+Mock.mock('/api/product/add', 'post', goodsApi.createGoods)
+Mock.mock('/api/product/update', 'post', goodsApi.updateGoods)
+Mock.mock('/api/product/batchDelete', 'post', goodsApi.batchDeleteGoods)
+Mock.mock('/api/product/batchUpdateStatus', 'post', goodsApi.batchUpdateGoodsStatus)
 
 // 商品分类
-Mock.mock(/api\/goods\/getGoodsCategory/, goodsApi.getGoodsCategory)
-Mock.mock('/api/goods/category/del', 'post', goodsApi.deleteGoodsCategory)
-Mock.mock('/api/goods/category/add', 'post', goodsApi.createGoodsCategory)
-Mock.mock('/api/goods/category/edit', 'post', goodsApi.updateGoodsCategory)
+Mock.mock(/api\/category\/list/, goodsApi.getGoodsCategory)
+Mock.mock('/api/category/delete', 'post', goodsApi.deleteGoodsCategory)
+Mock.mock('/api/category/add', 'post', goodsApi.createGoodsCategory)
+Mock.mock('/api/category/update', 'post', goodsApi.updateGoodsCategory)
 
 
 // 角色管理
@@ -88,5 +82,3 @@ Mock.mock('/api/article/edit', 'post', articleApi.updateArticle)
 Mock.mock('/api/checkChunkStatus','post', filesApi.checkChunkStatus)
 Mock.mock('/api/uploadFiles','post', filesApi.uploadFiles)
 Mock.mock('/api/importExcel','post', filesApi.importExcel)
-
-
