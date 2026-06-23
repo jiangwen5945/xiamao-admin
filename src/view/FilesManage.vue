@@ -49,7 +49,7 @@
 </template>
  
 <script>
-import { uploadFiles, checkChunkStatus } from '../api'
+
 export default {
   name: 'FilesManage',
   components: {},
@@ -95,7 +95,7 @@ export default {
           // 使用FormData传输文件流
           let _formData = new FormData()
           _formData.append(file.name, file.raw.slice(current, current + chunkSize))
-          await uploadFiles()
+          await this.$api.uploadFiles()
           current += chunkSize
           this.percentage = Math.min(Math.floor((current / fileSize) * 100), 100)
         }
@@ -105,7 +105,7 @@ export default {
       }      
 
       // 调用检测文件上传状态接口
-      const fileStatus = await checkChunkStatus({...fileInfo})
+      const fileStatus = await this.$api.checkChunkStatus({...fileInfo})
       console.log('调用检测文件上传状态接口', fileStatus);
       switch (fileStatus.status) {
         case 1: // 切片上传完毕但未完成合并

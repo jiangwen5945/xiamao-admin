@@ -81,7 +81,7 @@ export default {
     }
   },
   mounted() {
-    if (!this.currentRole && this.userRoles.length) {
+    if (!this.$store.state.tab.currentRole && this.userRoles.length) {
       this.$store.dispatch('switchCurrentRole', { role: this.userRoles[0], router: this.$router })
     }
   },

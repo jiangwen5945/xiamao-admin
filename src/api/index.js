@@ -88,6 +88,23 @@ export const deleteMember = (data) => {
   return http.post("/member/delete", data);
 };
 
+// 订单
+export const getOrderList = (params) => {
+  return http.get("/order/list", { params });
+};
+
+export const deleteOrder = (data) => {
+  return http.post("/order/delete", data);
+};
+
+export const createOrder = (data) => {
+  return http.post("/order/add", data);
+};
+
+export const updateOrder = (data) => {
+  return http.post("/order/update", data);
+};
+
 // **************************************************************************** //
 
 // 请求首页数据
@@ -131,22 +148,6 @@ export const deleteGoodsCategory = (data) => {
   return http.post("/category/delete", data);
 };
 
-// 订单
-export const getOrderList = (params) => {
-  return http.get("/order/getOrderList", { params });
-};
-
-export const deleteOrder = (data) => {
-  return http.post("/order/del", data);
-};
-
-export const createOrder = (data) => {
-  return http.post("/order/add", data);
-};
-
-export const updateOrder = (data) => {
-  return http.post("/order/edit", data);
-};
 
 // 文章
 export const getArticleList = (params) => {

@@ -50,7 +50,7 @@ Events：
 </template>
 
 <script>
-import { importExcel } from "../api";
+
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 
@@ -133,7 +133,7 @@ export default {
     /** 导入成功：解析数据 -> 提交后端 -> 通知父组件 */
     async handleSuccess() {
       this.readerData(this.files);
-      await importExcel(this.excelData);
+      await this.$api.importExcel(this.excelData);
       this.$emit("import-success", this.transExcel(this.excelData.results));
       this.$emit("update:loading", false);
       this.$message.success("上传成功");

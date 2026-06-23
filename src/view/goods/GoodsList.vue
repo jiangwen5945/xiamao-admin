@@ -248,14 +248,7 @@
 <script>
 import FilterBar from "../../components/FilterBar.vue";
 import FilterBarItem from "../../components/FilterBarItem.vue";
-import {
-  getProductList,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getGoodsCategory,
-  uploadFiles,
-} from "../../api";
+
 
 export default {
   name: "GoodsList",
@@ -331,7 +324,7 @@ export default {
   async created() {
     this.defaultForm = JSON.parse(JSON.stringify(this.form));
     this.getList();
-    const res = await getGoodsCategory();
+    const res = await this.$api.getGoodsCategory();
     this.categoryList = res.list || [];
   },
   activated() {
@@ -345,7 +338,7 @@ export default {
         if (Array.isArray(params[k]) && !params[k].length) delete params[k]
       })
       if (params.tags) params.tags = params.tags.join(',')
-      const res = await getProductList(params);
+      const res = await this.$api.getProductList(params);
       this.tableData = res.list;
       this.total = res.total;
     },
@@ -391,7 +384,7 @@ export default {
         type: "warning",
       })
         .then(() => {
-          deleteProduct({ ids }).then(() => {
+          this.$api.deleteProduct({ ids }).then(() => {
             this.$message({ type: "success", message: "删除成功!" });
             this.selectedIds = [];
             this.getList();
@@ -429,13 +422,13 @@ export default {
         delete payload.Category;
         delete payload.createdAt;
         delete payload.updatedAt;
-        await createProduct(payload);
+        await this.$api.createProduct(payload);
         this.getList();
       } else {
         delete payload.Category;
         delete payload.createdAt;
         delete payload.updatedAt;
-        await updateProduct(payload);
+        await this.$api.updateProduct(payload);
         this.getList();
       }
       this.handleClose();
@@ -454,7 +447,7 @@ export default {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("directory", "product");
-      const res = await uploadFiles(formData);
+      const res = await this.$api.uploadFiles(formData);
       this.isUploading = false;
       this.form.images.push({
         url: res.url,

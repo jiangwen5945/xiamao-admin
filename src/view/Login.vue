@@ -27,7 +27,7 @@
 import Cookie from 'js-cookie'
 import rules from '@/utils/rules';
 import { sha256 } from '@/utils/hash'
-import { login, getUserMenus, getUserDetail } from '../api'
+
 import { mapMutations } from 'vuex'
 
 function parseJwt(token) {
@@ -62,25 +62,31 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(['setMenuArray', 'addMenuToRouter', 'setUserInfo']),
+    ...mapMutations(['setMenuArray', 'addMenuToRouter', 'setUserInfo', 'setCurrentRole']),
     async handleLogin() {
       const isRule = await this.$refs.formRef.validate()
       if (!isRule) return
-      const res = await login(this.form)
+      const res = await this.$api.login(this.form)
       if (!res) return
       Cookie.set('token', res.token)
       // 设置用户密码哈希值
       sessionStorage.setItem('lockHash', await sha256(this.form.password))
       const { userId } = parseJwt(res.token)
       const [menus, user] = await Promise.all([
-        getUserMenus(),
-        getUserDetail({ id: userId })
+        this.$api.getUserMenus(),
+        this.$api.getUserDetail({ id: userId })
       ])
       this.setMenuArray(menus)
       this.setUserInfo(user)
+      const userRoles = user.Roles || []
+      if (userRoles.length) {
+        this.setCurrentRole(userRoles[0])
+      }
       this.addMenuToRouter(this.$router)
       this.$message.success('登录成功!')
-      this.$router.push('./home')
+      this.$router.push('/home').catch(err => {
+        if (err.name !== 'NavigationDuplicated') console.warn(err)
+      })
     },
     // 回车登录
     keyUpSubmit() {

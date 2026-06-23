@@ -81,12 +81,7 @@
 </template>
 
 <script>
-import {
-  getGoodsCategory,
-  deleteGoodsCategory,
-  createGoodsCategory,
-  updateGoodsCategory,
-} from "../../api";
+
 import rules from "@/utils/rules";
 
 export default {
@@ -128,7 +123,7 @@ export default {
   methods: {
     // 获取分类列表
     async getList() {
-      const res = await getGoodsCategory(this.queryParam);
+      const res = await this.$api.getGoodsCategory(this.queryParam);
       this.tableData = res.list;
       this.total = res.total;
     },
@@ -145,7 +140,7 @@ export default {
         type: "warning",
       })
         .then(() => {
-          deleteGoodsCategory(row).then(() => {
+          this.$api.deleteGoodsCategory(row).then(() => {
             this.$message({ type: "success", message: "删除成功!" });
             this.getList();
           });
@@ -170,10 +165,10 @@ export default {
     async submit() {
       await this.$refs.form.validate();
       if (this.modalType === 0) {
-        await createGoodsCategory(this.form);
+        await this.$api.createGoodsCategory(this.form);
         this.getList();
       } else {
-        await updateGoodsCategory(this.form);
+        await this.$api.updateGoodsCategory(this.form);
         this.getList();
       }
       this.handleClose();

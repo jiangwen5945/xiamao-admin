@@ -3,6 +3,8 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import ElementUI from 'element-ui';
+import * as api from './api'
+Vue.prototype.$api = api
 
 
 // import "../src/styles/theme/dark.css";

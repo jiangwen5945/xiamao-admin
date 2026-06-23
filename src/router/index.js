@@ -38,7 +38,13 @@ router.beforeEach((to, from, next) => {
   if (!token && to.name !== 'LoginView') {
     next({ name: 'LoginView' })
   } else if (token && to.name === 'LoginView') {
-    next({ name: 'home' })
+    // 检查 home 路由是否已注册（动态路由可能还没加载）
+    const homeRoute = router.match('/home')
+    if (homeRoute && homeRoute.name === 'home') {
+      next({ name: 'home' })
+    } else {
+      next()
+    }
   } else {
     next()
   }

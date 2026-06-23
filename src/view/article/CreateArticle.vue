@@ -43,7 +43,7 @@
 <script>
 import rules from "@/utils/rules";
 import { quillEditor } from "vue-quill-editor";
-import { createArticle, updateArticle } from '../../api'
+
 // require styles
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
@@ -107,12 +107,12 @@ export default {
         if (valid) {
           switch (this.currentType) {
             case 0:  // 新建
-              await createArticle(cloneForm)
+              await this.$api.createArticle(cloneForm)
               this.$refs.form.resetFields() // 表单进行重置
               this.$router.push({ path: 'ArticleList' })
               break;
             case 1:  // 编辑
-              await updateArticle(cloneForm)
+              await this.$api.updateArticle(cloneForm)
               this.$refs.form.resetFields() // 表单进行重置
               this.$router.push({ path: 'ArticleList' })
               break;

@@ -152,13 +152,7 @@
 import FilterBar from "../../components/FilterBar.vue";
 import FilterBarItem from "../../components/FilterBarItem.vue";
 // 导入 API
-import {
-  getMemberList,
-  createMember,
-  updateMember,
-  deleteMember,
-  uploadFiles,
-} from "../../api";
+
 
 export default {
   name: "MemberList",
@@ -218,7 +212,7 @@ export default {
         if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
         if (Array.isArray(params[k]) && !params[k].length) delete params[k]
       })
-      const res = await getMemberList(params);
+      const res = await this.$api.getMemberList(params);
       this.tableData = res.list;
       this.total = res.total;
     },
@@ -257,7 +251,7 @@ export default {
         type: "warning",
       })
         .then(() => {
-          deleteMember({ ids }).then(() => {
+          this.$api.deleteMember({ ids }).then(() => {
             this.$message({ type: "success", message: "删除成功!" });
             this.selectedIds = [];
             this.getList();
@@ -293,13 +287,13 @@ export default {
         delete payload.id;
         delete payload.createdAt;
         delete payload.updatedAt;
-        await createMember(payload);
+        await this.$api.createMember(payload);
         this.getList();
       } else {
         // 编辑
         delete payload.createdAt;
         delete payload.updatedAt;
-        await updateMember(payload);
+        await this.$api.updateMember(payload);
         this.getList();
       }
       this.handleClose();
@@ -319,7 +313,7 @@ export default {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("directory", "avatar");
-      const res = await uploadFiles(formData);
+      const res = await this.$api.uploadFiles(formData);
       this.$set(this.form, "avatar", res.url);
     },
     // 头像上传前校验

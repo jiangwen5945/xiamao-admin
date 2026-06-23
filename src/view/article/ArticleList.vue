@@ -62,7 +62,7 @@
 </template>
  
 <script>
-import { getArticleList, deleteArticle, createArticle, updateArticle } from '../../api'
+
 import { mixins } from "@/mixin";
 import rules from '@/utils/rules';
 export default {
@@ -96,16 +96,16 @@ export default {
   methods: {
     // 基础增删改查
     getDataApi() {
-      return getArticleList(this.queryParam)
+      return this.$api.getArticleList(this.queryParam)
     },
     deleteApi(id) {
-      return deleteArticle(id)
+      return this.$api.deleteArticle(id)
     },
     createApi(data) {
-      return createArticle(data)
+      return this.$api.createArticle(data)
     },
     updateApi(data) {
-      return updateArticle(data)
+      return this.$api.updateArticle(data)
     },
 
     // 分页操作

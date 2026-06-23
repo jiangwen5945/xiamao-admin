@@ -69,9 +69,6 @@ export default {
     //   { required: true, message: '日期不能为空', trigger: 'change' }
     // ],
 
-    level:[
-      { required: true, message: '级别不能为空', trigger: 'change' }
-    ],
     name: [
       { required: true, message: '名称不能为空', trigger: 'blur' }
     ],
