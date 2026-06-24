@@ -148,38 +148,23 @@
 </template>
 
 <script>
-// 导入公共组件
 import FilterBar from "../../components/FilterBar.vue";
 import FilterBarItem from "../../components/FilterBarItem.vue";
-// 导入 API
 
+const QUERY_PARAM = { page: 1, limit: 10, nickname: '', phone: '', status: '' }
+const createDefaultForm = () => ({ id: '', nickname: '', phone: '', avatar: '', open_id: '', status: 1 })
 
 export default {
   name: "MemberList",
   components: { FilterBar, FilterBarItem },
   data() {
     return {
-      tableData: [],         // 表格数据
-      total: 0,              // 数据总数
-      isVisible: false,      // 弹窗显隐
-      modalType: 0,          // 0-新增 1-编辑
-      form: {
-        id: "",
-        nickname: "",
-        phone: "",
-        avatar: "",
-        open_id: "",
-        status: 1,
-      },
-      // 查询参数
-      queryParam: {
-        page: 1,
-        limit: 10,
-        nickname: "",
-        phone: "",
-        status: "",
-      },
-      // 表单校验规则
+      tableData: [],
+      total: 0,
+      isVisible: false,
+      modalType: 0,
+      form: createDefaultForm(),
+      queryParam: { ...QUERY_PARAM },
       formRules: {
         nickname: [{ required: true, message: "昵称不能为空", trigger: "blur" }],
         phone: [
@@ -187,16 +172,13 @@ export default {
           { pattern: /^1\d{10}$/, message: "手机号格式不正确", trigger: "blur" },
         ],
       },
-
-      selectedIds: [],       // 选中行的 ID 列表
-      detailVisible: false,  // 详情抽屉显隐
-      currentDetail: {},     // 当前查看的会员详情
+      selectedIds: [],
+      detailVisible: false,
+      currentDetail: {},
     };
   },
 
   async created() {
-    // 保存表单默认值，用于重置
-    this.defaultForm = JSON.parse(JSON.stringify(this.form));
     this.getList();
   },
   activated() {
@@ -228,14 +210,8 @@ export default {
     },
     // 重置筛选条件
     handleReset() {
-      this.queryParam = {
-        page: 1,
-        limit: 10,
-        nickname: "",
-        phone: "",
-        status: "",
-      }
-      this.getList();
+      this.queryParam = { ...QUERY_PARAM }
+      this.getList()
     },
     // 多选切换
     handleSelectionChange(rows) {
@@ -275,36 +251,28 @@ export default {
     },
     // 新增
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true;
       this.modalType = 0;
     },
     // 提交表单
     async submit() {
-      await this.$refs.form.validate();
-      const payload = { ...this.form };
-      if (this.modalType === 0) {
-        // 新增
-        delete payload.id;
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        await this.$api.createMember(payload);
-        this.getList();
-      } else {
-        // 编辑
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        await this.$api.updateMember(payload);
-        this.getList();
-      }
-      this.handleClose();
+      await this.$refs.form.validate()
+      const payload = { ...this.form }
+      delete payload.createdAt
+      delete payload.updatedAt
+      if (this.modalType === 0) delete payload.id
+      await (this.modalType === 0 ? this.$api.createMember(payload) : this.$api.updateMember(payload))
+      this.getList()
+      this.handleClose()
       this.$message({
-        type: "success",
-        message: this.modalType === 0 ? "添加成功" : "编辑成功",
-      });
+        type: 'success',
+        message: this.modalType === 0 ? '添加成功' : '编辑成功',
+      })
     },
     // 关闭弹窗
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm));
+      this.form = createDefaultForm()
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },

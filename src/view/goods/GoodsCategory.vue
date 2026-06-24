@@ -84,6 +84,9 @@
 
 import rules from "@/utils/rules";
 
+const QUERY_PARAM = { page: 1, limit: 10, name: '' }
+const createDefaultForm = () => ({ id: null, name: null, sort: null })
+
 export default {
   name: "GoodsCategory",
   data() {
@@ -97,24 +100,14 @@ export default {
       // 0-新增 1-编辑
       modalType: 0,
       // 查询参数
-      queryParam: {
-        page: 1,
-        limit: 10,
-        name: "",
-      },
-      // 表单数据
-      form: {
-        id: null,
-        name: null,
-        sort: null,
-      },
+      queryParam: { ...QUERY_PARAM }, // 数据只有一层可以用浅拷贝
+      form: createDefaultForm(),
       // 表单校验规则
       rules,
     };
   },
 
-  async created() {
-    this.defaultForm = JSON.parse(JSON.stringify(this.form));
+  created() {
     this.getList();
   },
   activated() {
@@ -158,6 +151,7 @@ export default {
     },
     // 新增：打开空白表单
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true;
       this.modalType = 0;
     },
@@ -179,7 +173,7 @@ export default {
     },
     // 关闭弹窗
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm));
+      this.form = createDefaultForm()
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },

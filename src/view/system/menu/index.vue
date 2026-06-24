@@ -144,59 +144,43 @@
 </template>
 
 <script>
+const createDefaultForm = () => ({
+  parent_id: null,
+  type: 2,
+  name: '',
+  icon: '',
+  path: '',
+  component: '',
+  sort: 0,
+  status: 1,
+  show_sidebar: 1,
+})
+
+const QUERY_PARAM = { page: 1, pageSize: 99 }
+
+const ICON_LIST = [
+  's-home', 'user', 'turn-off', 's-check', 's-marketing', 'box',
+  's-order', 's-grid', 's-claim', 'document', 'document-copy',
+  'edit-outline', 'files',
+]
+
 export default {
   name: "MenuList",
 
   data() {
     return {
-      /** 表格数据（树形结构，包含 children） */
       tableData: [],
-
-      /** API 返回的扁平菜单列表 */
       flatList: [],
-
-      /** 弹窗显示状态 */
       isVisible: false,
-
-      /** 弹窗模式：0-新增 / 1-编辑 */
       modalType: 0,
-
-      /** 表单初始快照，用于关闭弹窗时重置 */
-      defaultForm: null,
-
-      /** Element UI 图标列表 */
-      iconList: [
-        's-home',
-        'user', 
-        'turn-off', 's-check', 's-marketing', 'box',
-        's-order', 's-grid', 's-claim', 'document', 'document-copy',
-        'edit-outline', 'files',
-      ],
-
-      /** 表单数据 */
-      form: {
-        parent_id: null, // 上级菜单 ID
-        type: 2,        // 类型：1-目录 / 2-菜单
-        name: "",       // 菜单名称
-        icon: "",       // 图标名称
-        path: "",       // 路由路径
-        component: "",  // 组件路径
-        sort: 0,        // 排序号
-        status: 1,      // 状态：0-禁用 / 1-启用
-        show_sidebar: 1, // 菜单栏显示：0-隐藏 / 1-显示
-      },
-
-      /** 表单校验规则 */
+      iconList: ICON_LIST,
+      form: createDefaultForm(),
       rules: {
         name: [{ required: true, message: '名称不能为空', trigger: 'blur' }],
         type: [{ required: true, message: '类型不能为空', trigger: 'change' }],
         path: [{ required: true, message: '路由路径不能为空', trigger: 'blur' }],
       },
-      queryParam: {
-        // 查询参数
-        page: 1,
-        pageSize: 99,
-      },
+      queryParam: { ...QUERY_PARAM },
     };
   },
 
@@ -232,10 +216,7 @@ export default {
   },
 
   created() {
-    // 初始化获取菜单列表
     this.getData()
-    // 保存表单初始状态，用于重置
-    this.defaultForm = JSON.parse(JSON.stringify(this.form))
   },
 
   // 当菜单类型为目录时，组件路径设置为空
@@ -303,6 +284,7 @@ export default {
 
     /** 新增菜单：打开弹窗，表单使用默认值 */
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true;
       this.modalType = 0;
     },
@@ -328,7 +310,7 @@ export default {
 
     /** 关闭弹窗并重置表单 */
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm));
+      this.form = createDefaultForm()
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },

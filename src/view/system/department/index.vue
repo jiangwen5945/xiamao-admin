@@ -55,6 +55,10 @@
  
 <script>
 import rules from '@/utils/rules';
+
+const QUERY_PARAM = { page: 1, limit: 10 }
+const createDefaultForm = () => ({ classId: '', className: '', employeesCount: '' })
+
 export default {
   name: 'DepartmentList',
   data() {
@@ -64,21 +68,12 @@ export default {
       total: 0,
       isVisible: false,
       modalType: 0,
-      queryParam: {
-        page: 1,
-        limit: 10
-      },
-      form:{
-        classId:'',
-        className:'',
-        employeesCount: ''
-      },
-      initForm: null
+      queryParam: { ...QUERY_PARAM },
+      form: createDefaultForm(),
     };
   },
   created() {
     this.getData()
-    this.initForm = JSON.parse(JSON.stringify(this.form))
   },
   activated() {
     this.getData()
@@ -116,6 +111,7 @@ export default {
       this.form = JSON.parse(JSON.stringify(row))
     },
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true
       this.modalType = 0
     },
@@ -141,7 +137,7 @@ export default {
       })
     },
     handleClose() {
-      this.form = { ...this.initForm }
+      this.form = createDefaultForm()
       this.isVisible = false
       this.$refs.form.clearValidate()
     },

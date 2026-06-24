@@ -32,7 +32,11 @@
     <div class="table-content">
       <el-table :data="tableData" stripe @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="45" />
-        <el-table-column prop="order_no" label="订单号" min-width="180" />
+        <el-table-column label="订单号" min-width="180">
+          <template #default="scope">
+            <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">{{ scope.row.order_no }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="80">
           <template #default="scope">
             <el-tag :type="statusTagType(scope.row.status)" size="mini">
@@ -61,9 +65,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column label="操作" width="210" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="scope">
-            <el-button size="mini" @click="handleDetail(scope.row)">详情</el-button>
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button type="danger" size="mini" @click="handleDelete(scope.row)">删除</el-button>
           </template>
@@ -181,6 +184,13 @@
 import FilterBar from "../../components/FilterBar.vue";
 import FilterBarItem from "../../components/FilterBarItem.vue";
 
+const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '', status: '', consignee: '' }
+const createDefaultForm = () => ({
+  id: '', order_no: '', member_id: '', total_amount: 0, actual_amount: 0,
+  status: 0, payment_method: '', consignee: '', consignee_phone: '',
+  shipping_address: '', remark: '',
+})
+const PAYMENT_METHOD_LIST = ['支付宝', '微信', '银联', '货到付款']
 
 export default {
   name: "OrderList",
@@ -192,26 +202,8 @@ export default {
       total: 0,
       isVisible: false,
       modalType: 0,
-      form: {
-        id: "",
-        order_no: "",
-        member_id: "",
-        total_amount: 0,
-        actual_amount: 0,
-        status: 0,
-        payment_method: "",
-        consignee: "",
-        consignee_phone: "",
-        shipping_address: "",
-        remark: "",
-      },
-      queryParam: {
-        page: 1,
-        pageSize: 10,
-        order_no: "",
-        status: "",
-        consignee: "",
-      },
+      form: createDefaultForm(),
+      queryParam: { ...QUERY_PARAM },
       formRules: {
         order_no: [{ required: true, message: "订单号不能为空", trigger: "blur" }],
         member_id: [{ required: true, message: "会员ID不能为空", trigger: "blur" }],
@@ -224,12 +216,11 @@ export default {
       selectedIds: [],
       detailVisible: false,
       currentDetail: {},
-      paymentMethodList: ['支付宝','微信','银联','货到付款']
+      paymentMethodList: PAYMENT_METHOD_LIST,
     };
   },
 
   async created() {
-    this.defaultForm = JSON.parse(JSON.stringify(this.form));
     this.getList();
   },
   activated() {
@@ -260,14 +251,8 @@ export default {
       this.getList();
     },
     handleReset() {
-      this.queryParam = {
-        page: 1,
-        pageSize: 10,
-        order_no: "",
-        status: "",
-        consignee: "",
-      }
-      this.getList();
+      this.queryParam = { ...QUERY_PARAM }
+      this.getList()
     },
     handleSelectionChange(rows) {
       this.selectedIds = rows.map(r => r.id)
@@ -308,38 +293,29 @@ export default {
       delete this.form.receive_time
     },
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true;
       this.modalType = 0;
     },
     async submit() {
-      await this.$refs.form.validate();
-      const payload = { ...this.form };
-      if (this.modalType === 0) {
-        delete payload.id;
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        delete payload.payment_time;
-        delete payload.delivery_time;
-        delete payload.receive_time;
-        await this.$api.createOrder(payload);
-        this.getList();
-      } else {
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        delete payload.payment_time;
-        delete payload.delivery_time;
-        delete payload.receive_time;
-        await this.$api.updateOrder(payload);
-        this.getList();
-      }
-      this.handleClose();
+      await this.$refs.form.validate()
+      const payload = { ...this.form }
+      delete payload.createdAt
+      delete payload.updatedAt
+      delete payload.payment_time
+      delete payload.delivery_time
+      delete payload.receive_time
+      if (this.modalType === 0) delete payload.id
+      await (this.modalType === 0 ? this.$api.createOrder(payload) : this.$api.updateOrder(payload))
+      this.getList()
+      this.handleClose()
       this.$message({
-        type: "success",
-        message: this.modalType === 0 ? "添加成功" : "编辑成功",
-      });
+        type: 'success',
+        message: this.modalType === 0 ? '添加成功' : '编辑成功',
+      })
     },
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm));
+      this.form = createDefaultForm()
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },

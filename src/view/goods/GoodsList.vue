@@ -1,7 +1,5 @@
 <template>
   <div class="page">
-   
-
     <FilterBar @query="handleQuery" @reset="handleReset">
       <FilterBarItem label="商品名称">
         <el-input v-model="queryParam.name" placeholder="" clearable @keyup.enter="handleQuery" />
@@ -89,6 +87,11 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="备注" min-width="120" show-overflow-tooltip>
+          <template #default="scope">
+            {{ scope.row.remark || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
@@ -116,6 +119,18 @@
       <el-form ref="form" :model="form" :rules="formRules" label-width="100px">
         <el-form-item label="商品名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
+        </el-form-item>
+        <el-form-item label="商品图片">
+          <el-upload
+            action="/api/uploadFiles"
+            :http-request="handleUploadFile"
+            list-type="picture-card"
+            :file-list="uploadFileList"
+            :on-remove="handleRemove"
+            ref="uploadRef"
+          >
+            <i class="el-icon-plus" />
+          </el-upload>
         </el-form-item>
         <el-form-item label="商品描述">
           <el-input type="textarea" v-model="form.description" placeholder="请输入商品描述" :rows="3" />
@@ -149,20 +164,11 @@
         <el-form-item label="商品库存" prop="stock">
           <el-input-number v-model="form.stock" :min="0" style="width:100%" />
         </el-form-item>
-        <el-form-item label="商品图片">
-          <el-upload
-            action="/api/uploadFiles"
-            :http-request="handleUploadFile"
-            list-type="picture-card"
-            :file-list="uploadFileList"
-            :on-remove="handleRemove"
-            ref="uploadRef"
-          >
-            <i class="el-icon-plus" />
-          </el-upload>
-        </el-form-item>
         <el-form-item label="是否上架">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
         <el-form-item label="商品规格">
           <div v-for="(spec, index) in form.specs" :key="index" class="spec-row">
@@ -181,6 +187,9 @@
           </div>
           <el-button type="primary" icon="el-icon-plus" size="mini" @click="addSpec">添加规格</el-button>
         </el-form-item>
+        <el-form-item label="详情页">
+          <quillEditor v-model="form.detail" :options="editorOption" class="editor" />
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="handleClose">取 消</el-button>
@@ -191,7 +200,7 @@
     <el-drawer
       :visible.sync="detailVisible"
       title="商品详情"
-      size="520px"
+      size="650px"
       :destroy-on-close="true"
     >
       <div class="drawer-body" v-if="currentDetail.id">
@@ -208,6 +217,7 @@
               {{ currentDetail.status === 1 ? '上架' : '下架' }}
             </el-tag>
           </el-descriptions-item>
+          <el-descriptions-item label="备注">{{ currentDetail.remark || '-' }}</el-descriptions-item>
         </el-descriptions>
 
         <h4 class="detail-section-title">商品描述</h4>
@@ -240,6 +250,9 @@
           <el-table-column prop="stock" label="库存" />
         </el-table>
         <p v-if="!currentDetail.specs?.length" class="detail-empty">暂无规格</p>
+      
+        <h4 class="detail-section-title">商品详情</h4>
+        <div class="detail-content" v-html="currentDetail.detail || '暂无介绍'"></div>
       </div>
     </el-drawer>
   </div>
@@ -248,44 +261,71 @@
 <script>
 import FilterBar from "../../components/FilterBar.vue";
 import FilterBarItem from "../../components/FilterBarItem.vue";
+import { quillEditor } from "vue-quill-editor";
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
 
+const QUERY_PARAM = {
+  page: 1,
+  limit: 10,
+  name: '',
+  category_id: '',
+  brand: '',
+  price_min: '',
+  price_max: '',
+  status: '',
+  tags: [],
+  sortField: '',
+  sortOrder: '',
+}
+
+const createDefaultForm = () => ({
+  id: '',
+  name: '',
+  description: '',
+  detail: '',
+  brand: '',
+  category_id: '',
+  tags: [],
+  price: '',
+  stock: 0,
+  sort: 0,
+  status: 1,
+  images: [],
+  specs: [],
+  remark: '',
+})
+
+const TAG_OPTIONS = ['新品', '热销', '推荐', '礼品', '夏季', '经典']
+
+const EDITOR_OPTION = {
+  theme: 'snow',
+  placeholder: '请输入商品详情（支持图文混排）',
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ header: [1, 2, 3, false] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['blockquote', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      ['link', 'image'],
+      ['clean'],
+    ],
+  },
+}
 
 export default {
   name: "GoodsList",
-  components: { FilterBar, FilterBarItem },
+  components: { FilterBar, FilterBarItem, quillEditor },
   data() {
     return {
       tableData: [],
       total: 0,
       isVisible: false,
       modalType: 0,
-      form: {
-        id: "",
-        name: "",
-        description: "",
-        brand: "",
-        category_id: "",
-        tags: [],
-        price: "",
-        stock: 0,
-        sort: 0,
-        status: 1,
-        images: [],
-        specs: [],
-      },
-      queryParam: {
-        page: 1,
-        limit: 10,
-        name: "",
-        category_id: "",
-        brand: "",
-        price_min: "",
-        price_max: "",
-        status: "",
-        tags: [],
-        sortField: "",
-        sortOrder: "",
-      },
+      form: createDefaultForm(),
+      queryParam: { ...QUERY_PARAM },
       formRules: {
         name: [{ required: true, message: "商品名称不能为空", trigger: "blur" }],
         price: [{ required: true, message: "商品价格不能为空", trigger: "blur" }],
@@ -298,7 +338,8 @@ export default {
       selectedIds: [],
       detailVisible: false,
       currentDetail: {},
-      tagOptions: ["新品", "热销", "推荐", "礼品", "夏季", "经典"],
+      tagOptions: TAG_OPTIONS,
+      editorOption: EDITOR_OPTION,
     };
   },
   computed: {
@@ -322,7 +363,6 @@ export default {
     }
   },
   async created() {
-    this.defaultForm = JSON.parse(JSON.stringify(this.form));
     this.getList();
     const res = await this.$api.getGoodsCategory();
     this.categoryList = res.list || [];
@@ -352,19 +392,10 @@ export default {
     },
     handleReset() {
       this.queryParam = {
-        page: 1,
-        limit: 10,
-        name: "",
-        category_id: this.$route.query.category_id || "",
-        brand: "",
-        price_min: "",
-        price_max: "",
-        status: "",
-        tags: [],
-        sortField: "",
-        sortOrder: "",
+        ...QUERY_PARAM,
+        category_id: this.$route.query.category_id || '',
       }
-      this.getList();
+      this.getList()
     },
     handleSelectionChange(rows) {
       this.selectedIds = rows.map(r => r.id)
@@ -411,36 +442,29 @@ export default {
       this.form = clone;
     },
     handleAdd() {
-      this.isVisible = true;
-      this.modalType = 0;
+      this.form = createDefaultForm()
+      this.isVisible = true
+      this.modalType = 0
     },
     async submit() {
-      await this.$refs.form.validate();
-      const payload = { ...this.form };
-      if (this.modalType === 0) {
-        delete payload.id;
-        delete payload.Category;
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        await this.$api.createProduct(payload);
-        this.getList();
-      } else {
-        delete payload.Category;
-        delete payload.createdAt;
-        delete payload.updatedAt;
-        await this.$api.updateProduct(payload);
-        this.getList();
-      }
-      this.handleClose();
+      await this.$refs.form.validate()
+      const payload = { ...this.form }
+      delete payload.Category
+      delete payload.createdAt
+      delete payload.updatedAt
+      if (this.modalType === 0) delete payload.id
+      await (this.modalType === 0 ? this.$api.createProduct(payload) : this.$api.updateProduct(payload))
+      this.getList()
+      this.handleClose()
       this.$message({
-        type: "success",
-        message: this.modalType === 0 ? "添加成功" : "编辑成功",
-      });
+        type: 'success',
+        message: this.modalType === 0 ? '添加成功' : '编辑成功',
+      })
     },
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm));
-      this.isVisible = false;
-      this.$refs.form.clearValidate();
+      this.form = createDefaultForm()
+      this.isVisible = false
+      this.$refs.form.clearValidate()
     },
     async handleUploadFile({ file }) {
       this.isUploading = true;
@@ -523,5 +547,21 @@ export default {
   object-fit: cover;
   border-radius: 4px;
   cursor: pointer;
+}
+.editor {
+  line-height: normal !important;
+  height: 350px;
+  p {
+    line-height: 1.5em;
+  }
+}
+.detail-content {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.8;
+  img {
+    max-width: 100%;
+    border-radius: 4px;
+  }
 }
 </style>

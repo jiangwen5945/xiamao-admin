@@ -44,6 +44,7 @@ for (let i = 0; i < count; i++) {
     id: 10000 + i,
     name: Mock.Random.ctitle(3, 6),
     description: Mock.Random.csentence(10, 30),
+    detail: '<h3>商品详情</h3><p>' + Mock.Random.csentence(20, 50) + '</p><p>' + Mock.Random.csentence(20, 50) + '</p>',
     brand: Mock.Random.pick(brandList),
     price: Mock.Random.integer(10, 200),
     category_id: catId,
@@ -53,6 +54,7 @@ for (let i = 0; i < count; i++) {
     stock: Mock.Random.integer(10, 1000),
     status: Mock.Random.integer(0, 1),
     sales: Mock.Random.integer(100, 1000),
+    remark: Mock.Random.csentence(5, 15),
     images: Array.from({ length: Mock.Random.integer(1, 4) }, (_, idx) => ({
       url: Mock.Random.image('120x120'),
       sort: idx + 1,

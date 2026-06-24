@@ -212,6 +212,13 @@
 import rules from "../../../utils/rules";
 import CommonExcel from "@/components/CommonExcel.vue";
 
+const QUERY_PARAM = { page: 1, pageSize: 9, username: '' }
+const createDefaultForm = () => ({
+  avatar: '', username: '', nickname: '', password: '', email: '',
+  phone: '', gender: '', status: 1, birth: '', Department: {},
+  dept_id: '', Roles: [], roles: [],
+})
+
 export default {
   name: "UserList",
   components: {
@@ -219,40 +226,19 @@ export default {
   },
   data() {
     return {
-      tableData: [], // 表格数据
-      total: 0, // 数据总数
-      isVisible: false, // 弹窗显示状态
-      modalType: 0, // 0-新增 1-编辑
-      roleList: [], // 角色列表
-      deptList: [], // 部门列表
-      form: {
-        avatar: '',   // 头像URL
-        username: '', // 用户名
-        nickname: '', // 昵称
-        password: '', // 密码
-        email: '',    // 邮箱
-        phone: '',    // 手机号
-        gender: '',   // 性别：1-男 0-女
-        status: 1,    // 状态：1-启用 0-禁用
-        birth: '',    // 出生日期
-        Department: {},   // 所属部门对象
-        dept_id:  '', // 所属部门对象id
-        Roles: [],   // 角色对象数组
-        roles: [],    // 角色ID数组
-      }, // 表单数据
-      queryParam: {
-        // 查询参数
-        page: 1,
-        pageSize: 9,
-        username: "",
-      },
-      rules, // 表单校验规则
-      loading: false, // 导出加载状态
+      tableData: [],
+      total: 0,
+      isVisible: false,
+      modalType: 0,
+      roleList: [],
+      deptList: [],
+      form: createDefaultForm(),
+      queryParam: { ...QUERY_PARAM },
+      rules,
+      loading: false,
     };
   },
   async created() {
-    // 备份表单初始值，用于弹窗关闭时重置
-    this.defaultForm = JSON.parse(JSON.stringify(this.form))
     this.getUserList();
     const { list } = await this.$api.getRoleList();
     this.roleList = list
@@ -328,9 +314,9 @@ export default {
     },
     // 新增：打开空白表单
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true;
       this.modalType = 0;
-      // this.$set(this.form, "roles", []);
     },
     // 提交表单
     async submit() {
@@ -367,7 +353,7 @@ export default {
     },
     // 关闭弹窗
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm))
+      this.form = createDefaultForm()
       this.isVisible = false;
       this.$refs.form.clearValidate();
     },

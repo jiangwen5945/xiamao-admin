@@ -107,42 +107,27 @@
 import rules from '@/utils/rules'
 import { mapMutations } from 'vuex'
 
+const QUERY_PARAM = { page: 1, total: 10 }
+const createDefaultForm = () => ({ id: '', name: '', menuIds: [], status: false })
+
 export default {
   name: 'RoleList',
 
   data() {
     return {
-      // 表格相关
-      tableData: [],   // 角色列表数据
-      count: 0,        // 数据总条数
-      queryParam: {
-        page: 1,
-        total: 10
-      },
-      // 弹窗相关
-      isVisible: false, // 新增/编辑弹窗显隐
-      modalType: 0,     // 弹窗类型：0-新增，1-编辑
-      defaultForm: null,   // 表单初始值快照，用于关闭弹窗时重置
-      // 表单校验规则
+      tableData: [],
+      count: 0,
+      queryParam: { ...QUERY_PARAM },
+      isVisible: false,
+      modalType: 0,
       rules,
-      // 权限树列表
       menuList: [],
-      // 表单数据
-      form: {
-        id: '',
-        name: '',
-        menuIds: [],
-        status: false,
-       
-      }
+      form: createDefaultForm(),
     }
   },
 
   created() {
-    // 初始化获取角色列表
     this.getData()
-    // 备份表单初始值，用于弹窗关闭时重置
-    this.defaultForm = JSON.parse(JSON.stringify(this.form))
   },
 
   mounted() {
@@ -207,6 +192,7 @@ export default {
 
     /** 打开新增弹窗 */
     handleAdd() {
+      this.form = createDefaultForm()
       this.isVisible = true
       this.modalType = 0
     },
@@ -248,7 +234,7 @@ export default {
 
     /** 关闭弹窗，重置表单并清除校验 */
     handleClose() {
-      this.form = JSON.parse(JSON.stringify(this.defaultForm))
+      this.form = createDefaultForm()
       this.isVisible = false
       this.$refs.form.clearValidate()
     },
