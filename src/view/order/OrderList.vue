@@ -52,7 +52,8 @@
         </el-table-column>
         <el-table-column prop="payment_method" label="支付方式" width="100" >
           <template #default="scope">
-            <el-tag size="mini">{{ scope.row.payment_method }}</el-tag>
+            <el-tag size="mini" v-if=" scope.row.payment_method">{{ scope.row.payment_method }}</el-tag>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="consignee" label="收货人" width="90" />

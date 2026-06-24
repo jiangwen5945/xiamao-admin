@@ -101,7 +101,7 @@
       <el-pagination
         layout="total, prev, pager, next"
         :total="total"
-        :page-size="queryParam.limit"
+        :page-size="queryParam.pageSize"
         :current-page.sync="queryParam.page"
         class="pagination"
         @current-change="handleCurrentChange"
@@ -268,7 +268,7 @@ import 'quill/dist/quill.bubble.css'
 
 const QUERY_PARAM = {
   page: 1,
-  limit: 10,
+  pageSize: 10,
   name: '',
   category_id: '',
   brand: '',

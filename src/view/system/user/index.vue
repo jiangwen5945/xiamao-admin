@@ -79,6 +79,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="birth" label="出生日期" width="150">
+           <template #default="scope">{{ scope.row.createdAt | dateTime }}</template>
         </el-table-column>
         <!-- 操作列：编辑 / 删除 -->
         <el-table-column label="操作" width="150" fixed="right">
@@ -211,6 +212,7 @@
 
 import rules from "../../../utils/rules";
 import CommonExcel from "@/components/CommonExcel.vue";
+import dayjs from "dayjs";
 
 const QUERY_PARAM = { page: 1, pageSize: 9, username: '' }
 const createDefaultForm = () => ({
@@ -223,6 +225,11 @@ export default {
   name: "UserList",
   components: {
     CommonExcel,
+  },
+  filters: {
+    dateTime(val) {
+      return dayjs(val).format("YYYY-MM-DD")
+    },
   },
   data() {
     return {
@@ -242,7 +249,7 @@ export default {
     this.getUserList();
     const { list } = await this.$api.getRoleList();
     this.roleList = list
-    const deptRes = await this.$api.getClassList({ page: 1, limit: 999 })
+    const deptRes = await this.$api.getClassList()
     this.deptList = deptRes.list || deptRes
   },
   activated() {

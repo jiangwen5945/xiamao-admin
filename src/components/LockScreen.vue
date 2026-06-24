@@ -85,6 +85,7 @@ export default {
         type: 'success',
         duration: 1200
       })
+      this.form.passWord = ''
     },
     // 回车登录
     keyUpSubmit() {

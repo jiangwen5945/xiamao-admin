@@ -45,7 +45,7 @@
       <el-pagination
         layout="prev, pager, next"
         :total="total"
-        :page-size="queryParam.limit"
+        :page-size="queryParam.pageSize"
         :current-page.sync="queryParam.page"
         class="pagination"
         @current-change="handleCurrentChange"
@@ -84,7 +84,7 @@
 
 import rules from "@/utils/rules";
 
-const QUERY_PARAM = { page: 1, limit: 10, name: '' }
+const QUERY_PARAM = { page: 1, pageSize: 10, name: '' }
 const createDefaultForm = () => ({ id: null, name: null, sort: null })
 
 export default {
