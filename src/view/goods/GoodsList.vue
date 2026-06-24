@@ -78,7 +78,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="sort" label="排序" width="90" sortable="custom" />
         <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
         <el-table-column label="商品状态" width="80">
           <template #default="scope">
@@ -115,10 +114,46 @@
       :before-close="handleClose"
       center
       :destroy-on-close="true"
+      width="920px"
     >
-      <el-form ref="form" :model="form" :rules="formRules" label-width="100px">
-        <el-form-item label="商品名称" prop="name">
+      <el-form ref="form" :model="form" :rules="formRules" label-width="100px" class="goods-form">
+        <el-form-item label="商品名称" prop="name" class="half-width">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
+        </el-form-item>
+        <el-form-item label="商品品牌" class="half-width">
+          <el-input v-model="form.brand" placeholder="请输入品牌名称" />
+        </el-form-item>
+        <el-form-item label="商品价格" prop="price" class="half-width">
+          <el-input v-model.number="form.price" placeholder="请输入商品价格">
+            <template slot="prepend">¥</template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="商品分类" prop="category_id" class="half-width">
+          <el-select v-model="form.category_id" placeholder="请选择分类" style="width:100%" filterable>
+            <el-option v-for="item in categoryList" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="商品排序" prop="sort" class="half-width">
+          <el-input-number v-model="form.sort" :min="0" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="商品库存" prop="stock" class="half-width">
+          <el-input-number v-model="form.stock" :min="0" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="是否上架" class="half-width">
+          <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="商品标签">
+          <el-checkbox-group v-model="form.tags" size="small">
+            <el-checkbox label="新品" border />
+            <el-checkbox label="热销" border />
+            <el-checkbox label="推荐" border />
+            <el-checkbox label="礼品" border />
+            <el-checkbox label="夏季" border />
+            <el-checkbox label="经典" border />
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="商品描述">
+          <el-input type="textarea" v-model="form.description" placeholder="请输入商品描述" :rows="3" />
         </el-form-item>
         <el-form-item label="商品图片">
           <el-upload
@@ -131,44 +166,6 @@
           >
             <i class="el-icon-plus" />
           </el-upload>
-        </el-form-item>
-        <el-form-item label="商品描述">
-          <el-input type="textarea" v-model="form.description" placeholder="请输入商品描述" :rows="3" />
-        </el-form-item>
-        <el-form-item label="商品品牌">
-          <el-input v-model="form.brand" placeholder="请输入品牌名称" />
-        </el-form-item>
-        <el-form-item label="商品价格" prop="price">
-          <el-input v-model.number="form.price" placeholder="请输入商品价格">
-            <template slot="prepend">¥</template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="商品分类" prop="category_id">
-          <el-select v-model="form.category_id" placeholder="请选择分类" style="width:100%" filterable>
-            <el-option v-for="item in categoryList" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="商品标签">
-          <el-checkbox-group v-model="form.tags" size="small">
-            <el-checkbox label="新品" border />
-            <el-checkbox label="热销" border />
-            <el-checkbox label="推荐" border />
-            <el-checkbox label="礼品" border />
-            <el-checkbox label="夏季" border />
-            <el-checkbox label="经典" border />
-          </el-checkbox-group>
-        </el-form-item>
-        <el-form-item label="商品排序" prop="sort">
-          <el-input-number v-model="form.sort" :min="0" style="width:100%" />
-        </el-form-item>
-        <el-form-item label="商品库存" prop="stock">
-          <el-input-number v-model="form.stock" :min="0" style="width:100%" />
-        </el-form-item>
-        <el-form-item label="是否上架">
-          <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
         <el-form-item label="商品规格">
           <div v-for="(spec, index) in form.specs" :key="index" class="spec-row">
@@ -187,8 +184,11 @@
           </div>
           <el-button type="primary" icon="el-icon-plus" size="mini" @click="addSpec">添加规格</el-button>
         </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+        </el-form-item>
         <el-form-item label="详情页">
-          <quillEditor v-model="form.detail" :options="editorOption" class="editor" />
+          <quillEditor ref="quillEditor" v-model="form.detail" :options="editorOption" class="editor" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -430,36 +430,70 @@ export default {
       this.currentDetail = row
       this.detailVisible = true
     },
-    handleEdit(row) {
-      this.isVisible = true;
+    async handleEdit(row) {
       this.modalType = 1;
-      const clone = JSON.parse(JSON.stringify(row));
-      clone.images = (row.images || []).map((img, i) => ({
+      const res = await this.$api.getProductDetail(row.id)
+      this.form = { ...createDefaultForm(), ...res }
+      this.form.images = (this.form.images || []).map((img, i) => ({
         url: img.url,
         sort: img.sort || i + 1,
         type: img.type || (i === 0 ? "main" : "carousel"),
       }));
-      this.form = clone;
+      this.isVisible = true;
+      this.setupEditorImageHandler();
+    },
+    setupEditorImageHandler() {
+      this.$nextTick(() => {
+        const quill = this.$refs.quillEditor?.quill
+        if (!quill) return
+        const toolbar = quill.getModule('toolbar')
+        toolbar.addHandler('image', () => {
+          const input = document.createElement('input')
+          input.setAttribute('type', 'file')
+          input.setAttribute('accept', 'image/*')
+          input.click()
+          input.onchange = async () => {
+            const file = input.files[0]
+            if (!file) return
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('directory', 'product')
+            try {
+              const res = await this.$api.uploadFiles(formData)
+              const range = quill.getSelection(true)
+              quill.insertEmbed(range.index, 'image', res.url)
+            } catch {
+              this.$message.error('图片上传失败')
+            }
+          }
+        })
+      })
     },
     handleAdd() {
       this.form = createDefaultForm()
       this.isVisible = true
       this.modalType = 0
+      this.setupEditorImageHandler()
     },
     async submit() {
-      await this.$refs.form.validate()
-      const payload = { ...this.form }
-      delete payload.Category
-      delete payload.createdAt
-      delete payload.updatedAt
-      if (this.modalType === 0) delete payload.id
-      await (this.modalType === 0 ? this.$api.createProduct(payload) : this.$api.updateProduct(payload))
-      this.getList()
-      this.handleClose()
-      this.$message({
-        type: 'success',
-        message: this.modalType === 0 ? '添加成功' : '编辑成功',
-      })
+      try {
+        await this.$refs.form.validate()
+        const payload = { ...this.form }
+        delete payload.Category
+        delete payload.createdAt
+        delete payload.updatedAt
+        if (this.modalType === 0) delete payload.id
+        console.log('payload', payload);
+        await (this.modalType === 0 ? this.$api.createProduct(payload) : this.$api.updateProduct(payload))
+        this.getList()
+        this.handleClose()
+        this.$message({
+          type: 'success',
+          message: this.modalType === 0 ? '添加成功' : '编辑成功',
+        })
+       } catch (error) {
+        this.$message.error('操作失败')
+      }
     },
     handleClose() {
       this.form = createDefaultForm()
@@ -548,6 +582,14 @@ export default {
   border-radius: 4px;
   cursor: pointer;
 }
+.goods-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 16px;
+}
+.goods-form .el-form-item:not(.half-width) {
+  grid-column: 1 / -1;
+}
 .editor {
   line-height: normal !important;
   height: 350px;
@@ -563,5 +605,9 @@ export default {
     max-width: 100%;
     border-radius: 4px;
   }
+}
+
+.el-checkbox-group .el-checkbox {
+  margin-right: 0;
 }
 </style>

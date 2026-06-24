@@ -5,13 +5,7 @@ Vue.use(VueRouter)
 
 // 1. 定义组件
 import Main from '../view/Main.vue'
-// import HomeView from '../view/HomeView.vue'
-// import Mall from '../view/Mall.vue'
-// import UserManage from '../view/UserManage.vue'
-// import PageOne from '../view/PageOne.vue'
-// import PageTwo from '../view/PageTwo.vue'
 import Login from '../view/Login.vue'
-// import Error from '../view/Error.vue'
 // 2. 定义路由
 const routes = [
   {

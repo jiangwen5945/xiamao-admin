@@ -105,24 +105,12 @@ export const updateOrder = (data) => {
   return http.post("/order/update", data);
 };
 
-// **************************************************************************** //
-
-// 请求首页数据
-export const getData = () => {
-  return http.get("/home/getData");
-};
-
-// 用户登录权限
-export const userPermission = (data) => {
-  return http.post("/permissionApi/getMenu", data);
-};
-export const saveUserInfo = (data) => {
-  return http.post("/permissionApi/saveUserInfo", data);
-};
-
 // 商品
 export const getProductList = (params) => {
   return http.get("/product/list", { params });
+};
+export const getProductDetail = (id) => {
+  return http.get("/product/detail", { params: { id } });
 };
 export const createProduct = (data) => {
   return http.post("/product/add", data);
@@ -148,34 +136,17 @@ export const deleteGoodsCategory = (data) => {
   return http.post("/category/delete", data);
 };
 
-
-// 文章
-export const getArticleList = (params) => {
-  return http.get("/article/getArticleList", { params });
-};
-
-export const deleteArticle = (data) => {
-  return http.post("/article/del", data);
-};
-
-export const createArticle = (data) => {
-  return http.post("/article/add", data);
-};
-
-export const updateArticle = (data) => {
-  return http.post("/article/edit", data);
-};
-
-
-// 文件
-export const checkChunkStatus = (data) => {
-  return http.post("/checkChunkStatus", data);
-};
-
+// 图片文件上传
 export const uploadFiles = (data) => {
   return http.post("/uploadFiles", data);
 };
 
+// Excel导入
 export const importExcel = (data) => {
   return http.post("/importExcel", data);
+};
+
+// 请求首页数据
+export const getData = () => {
+  return http.get("/home/getData");
 };

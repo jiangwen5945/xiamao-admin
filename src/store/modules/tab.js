@@ -1,5 +1,5 @@
 import {resetRouter} from '@/router'
-import { getUserMenus, userPermission, saveUserInfo } from '@/api'
+import { getUserMenus } from '@/api'
 export default {
   state: {
     isCollapse: false, // 控制菜单展开或关闭
@@ -109,12 +109,6 @@ export default {
       commit('setMenuArray', menus)
       commit('addMenuToRouter', router)
     },
-    async changeUserInfo(ctx, data){
-       // 验证用户密码
-       await userPermission(data)
-       const res = await saveUserInfo(data)
-       ctx.commit('setUserInfo', res.userInfo)
-    }
   }
 
 }
