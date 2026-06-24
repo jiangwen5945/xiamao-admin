@@ -74,7 +74,7 @@ export default {
     // 解除屏幕锁定
     async handleUnlock() {
       if (this.form.passWord === '') return
-      const savedHash = sessionStorage.getItem('lockHash')
+      const savedHash = localStorage.getItem('lockHash')
       if (await sha256(this.form.passWord) !== savedHash) {
         this.$message.error('密码错误')
         return

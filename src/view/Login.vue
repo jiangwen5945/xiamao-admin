@@ -70,7 +70,7 @@ export default {
       if (!res) return
       Cookie.set('token', res.token)
       // 设置用户密码哈希值
-      sessionStorage.setItem('lockHash', await sha256(this.form.password))
+      localStorage.setItem('lockHash', await sha256(this.form.password))
       const { userId } = parseJwt(res.token)
       const [menus, user] = await Promise.all([
         this.$api.getUserMenus(),
