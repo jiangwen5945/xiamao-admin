@@ -78,7 +78,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="stock" label="库存" width="100" sortable="custom" />
+
         <el-table-column label="商品状态" width="80">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'" size="mini">
@@ -136,9 +136,7 @@
         <el-form-item label="商品排序" prop="sort" class="half-width">
           <el-input-number v-model="form.sort" :min="0" style="width:100%" />
         </el-form-item>
-        <el-form-item label="商品库存" prop="stock" class="half-width">
-          <el-input-number v-model="form.stock" :min="0" style="width:100%" />
-        </el-form-item>
+
         <el-form-item label="是否上架" class="half-width">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
@@ -289,7 +287,7 @@ const createDefaultForm = () => ({
   category_id: '',
   tags: [],
   price: '',
-  stock: 0,
+
   sort: 0,
   status: 1,
   images: [],
@@ -331,7 +329,7 @@ export default {
         price: [{ required: true, message: "商品价格不能为空", trigger: "blur" }],
         category_id: [{ required: true, message: "请选择商品分类", trigger: "change" }],
         sort: [{ required: true, message: "排序不能为空", trigger: "blur" }],
-        stock: [{ required: true, message: "库存不能为空", trigger: "blur" }],
+
       },
       categoryList: [],
       isUploading: false,
