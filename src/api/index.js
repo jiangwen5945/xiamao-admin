@@ -136,6 +136,26 @@ export const deleteGoodsCategory = (data) => {
   return http.post("/category/delete", data);
 };
 
+// 库存
+export const getStockList = (params) => {
+  return http.get("/stock/list", { params });
+};
+export const getStockDetail = (params) => {
+  return http.get("/stock/detail", { params });
+};
+export const adjustStock = (data) => {
+  return http.post("/stock/adjust", data);
+};
+export const inboundStock = (data) => {
+  return http.post("/stock/inbound", data);
+};
+export const getStockMovements = (params) => {
+  return http.get("/stock/movements", { params });
+};
+export const getStockStats = () => {
+  return http.get("/stock/stats");
+};
+
 // 图片文件上传
 export const uploadFiles = (data) => {
   return http.post("/uploadFiles", data);
@@ -149,4 +169,34 @@ export const importExcel = (data) => {
 // 请求首页数据
 export const getData = () => {
   return http.get("/home/getData");
+};
+
+// 通知
+export const getNotifications = (params) => {
+  return http.get("/notification/list", { params });
+};
+export const readNotification = (data) => {
+  return http.post("/notification/read", data);
+};
+
+// 操作日志
+export const getLogList = (params) => {
+  return http.get("/log/list", { params });
+};
+export const getLogDetail = (params) => {
+  return http.get("/log/detail", { params });
+};
+export const deleteLog = (data) => {
+  return http.post("/log/delete", data);
+};
+
+// 售后
+export const getAfterSalesList = (params) => {
+  return http.get("/after-sales/admin/list", { params });
+};
+export const approveAfterSales = (data) => {
+  return http.post("/after-sales/admin/approve", data);
+};
+export const rejectAfterSales = (data) => {
+  return http.post("/after-sales/admin/reject", data);
 };
