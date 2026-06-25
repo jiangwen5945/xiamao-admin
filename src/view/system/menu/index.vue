@@ -144,6 +144,9 @@
 </template>
 
 <script>
+import { mapMutations } from 'vuex'
+import { getUserMenus } from '@/api'
+
 const createDefaultForm = () => ({
   parent_id: null,
   type: 2,
@@ -234,6 +237,15 @@ export default {
   },
 
   methods: {
+    ...mapMutations(['setMenuArray', 'addMenuToRouter']),
+
+    /** 刷新侧边栏菜单缓存 */
+    async refreshMenus() {
+      const menus = await getUserMenus()
+      this.setMenuArray(menus)
+      this.addMenuToRouter(this.$router)
+    },
+
     /** 获取菜单列表：后端返回扁平数据，前端组装树 */
     async getData() {
       const { list } = await this.$api.getMenuList(this.queryParam);
@@ -264,9 +276,10 @@ export default {
         type: 'warning',
       })
         .then(() => {
-          this.$api.deleteMenu({ id }).then(() => {
+          this.$api.deleteMenu({ id }).then(async () => {
             this.$message({ type: 'success', message: '删除成功!' });
             this.getData();
+            await this.refreshMenus();
           });
         })
         .catch((err) => {
@@ -300,6 +313,7 @@ export default {
           await this.$api.updateMenu(this.form);
         }
         this.getData();
+        await this.refreshMenus();
         this.handleClose();
         this.$message({
           type: 'success',
