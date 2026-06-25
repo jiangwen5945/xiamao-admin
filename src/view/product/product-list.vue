@@ -257,8 +257,8 @@
 </template>
 
 <script>
-import FilterBar from "../../components/FilterBar";
-import FilterBarItem from "../../components/FilterBarItem";
+import FilterBar from "@/components/filter/FilterBar";
+import FilterBarItem from "@/components/filter/FilterBarItem";
 import { quillEditor } from "vue-quill-editor";
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'

@@ -245,8 +245,8 @@
 </template>
 
 <script>
-import FilterBar from "../../components/FilterBar";
-import FilterBarItem from "../../components/FilterBarItem";
+import FilterBar from "@/components/filter/FilterBar.vue";
+import FilterBarItem from "@/components/filter/FilterBarItem";
 import dayjs from "dayjs";
 
 const QUERY_PARAM = {
