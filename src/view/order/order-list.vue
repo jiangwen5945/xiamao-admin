@@ -182,8 +182,8 @@
 </template>
 
 <script>
-import FilterBar from "../../components/FilterBar.vue";
-import FilterBarItem from "../../components/FilterBarItem.vue";
+import FilterBar from "../../components/FilterBar";
+import FilterBarItem from "../../components/FilterBarItem";
 
 const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '', status: '', consignee: '' }
 const createDefaultForm = () => ({

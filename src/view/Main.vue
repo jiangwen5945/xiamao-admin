@@ -2,14 +2,14 @@
   <div>
     <el-container>
       <el-aside width="auto">
-        <common-aside></common-aside>
+        <TheMenu />
       </el-aside>
       <el-container>
         <el-header>
-          <common-header></common-header>
+          <TheHeader />
         </el-header>
         <el-main>
-          <common-tag></common-tag>
+          <TheNav />
           <!-- 这里是会被缓存的视图组件(对name为member的组件不缓存) -->
           <keep-alive exclude="member"> 
             <router-view v-if="$route.meta.keepAlive"></router-view>
@@ -25,9 +25,9 @@
 </template>
 
 <script>
-import CommonAside from '../components/CommonAside.vue'
-import CommonHeader from '../components/CommonHeader.vue'
-import CommonTag from '../components/CommonTag.vue'
+import TheMenu from '../components/TheMenu'
+import TheHeader from '../components/TheHeader'
+import TheNav from '../components/TheNav'
 import LockScreen from '@/components/LockScreen.vue'
 export default {
   name: 'MainView',
@@ -35,9 +35,9 @@ export default {
     msg: String
   },
   components: {
-    CommonAside,
-    CommonHeader,
-    CommonTag,
+    TheMenu,
+    TheHeader,
+    TheNav,
     LockScreen
   }
 }

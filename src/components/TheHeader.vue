@@ -17,6 +17,9 @@
     <!-- 右侧：功能图标 + 角色切换 + 用户信息 -->
     <div class="r-container">
       <div class="theme-icon">
+        <el-badge :value="unreadCount" :hidden="!unreadCount" class="notice-badge">
+          <i class="el-icon-bell" @click="handleNoticeClick" />
+        </el-badge>
         <i class="el-icon-lock" @click="setLockScreen(true)" />
         <i :class="[theme === 'dark' ? 'el-icon-sunny' : 'el-icon-moon']" @click="setTheme(theme)" />
       </div>
@@ -48,6 +51,24 @@
         </el-dropdown-menu>
       </el-dropdown>
     </div>
+
+    <el-drawer
+      :visible.sync="noticeDrawerVisible"
+      title="通知消息"
+      size="420px"
+      :destroy-on-close="true"
+    >
+      <div class="notice-list">
+        <div v-for="item in noticeList" :key="item.id" class="notice-item" :class="{ unread: !item.is_read }" @click="handleReadNotice(item)">
+          <div class="notice-content">
+            <span class="notice-dot" v-if="!item.is_read" />
+            <span class="notice-text">{{ item.content }}</span>
+          </div>
+          <div class="notice-time">{{ item.created_at }}</div>
+        </div>
+        <el-empty v-if="!noticeList.length" description="暂无通知" />
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -56,6 +77,13 @@ import Cookie from 'js-cookie'
 import { mapActions, mapState } from 'vuex'
 
 export default {
+  data() {
+    return {
+      noticeDrawerVisible: false,
+      noticeList: [],
+      unreadCount: 0,
+    }
+  },
   computed: {
     ...mapState({
       crumbsList: state => state.tab.crumbsList,
@@ -84,6 +112,7 @@ export default {
     if (!this.$store.state.tab.currentRole && this.userRoles.length) {
       this.$store.dispatch('switchCurrentRole', { role: this.userRoles[0], router: this.$router })
     }
+    this.fetchNotifications()
   },
   methods: {
     // 折叠/展开侧边菜单
@@ -118,7 +147,26 @@ export default {
     ...mapActions('setting', [
       'setLockScreen',
       'setTheme'
-    ])
+    ]),
+    handleNoticeClick() {
+      this.noticeDrawerVisible = true
+      this.fetchNotifications()
+    },
+    fetchNotifications() {
+      this.noticeList = [
+        { id: 1, content: '订单 #20240625001 已支付，等待发货', created_at: '2024-06-25 10:30', is_read: false },
+        { id: 2, content: '商品「机械键盘」库存不足，当前仅剩 3 件', created_at: '2024-06-25 09:15', is_read: false },
+        { id: 3, content: '新用户「张三」已注册', created_at: '2024-06-24 16:00', is_read: false },
+        { id: 4, content: '订单 #20240624088 已签收', created_at: '2024-06-24 14:20', is_read: true },
+        { id: 5, content: '系统将于 6月26日 02:00-04:00 进行维护升级', created_at: '2024-06-24 11:00', is_read: true },
+      ]
+      this.unreadCount = this.noticeList.filter(n => !n.is_read).length
+    },
+    handleReadNotice(item) {
+      if (item.is_read) return
+      item.is_read = true
+      this.unreadCount = Math.max(0, this.unreadCount - 1)
+    },
   }
 }
 </script>
@@ -181,5 +229,59 @@ export default {
       }
     }
   }
+}
+
+.notice-badge {
+  ::v-deep .el-badge__content {
+    top: 8px;
+    right: 4px;
+  }
+}
+
+.notice-list {
+  padding: 0 16px;
+}
+
+.notice-item {
+  padding: 12px 8px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+
+  &.unread {
+    background: #f0f7ff;
+  }
+}
+
+.notice-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.notice-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #409eff;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.notice-text {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.notice-time {
+  font-size: 12px;
+  color: #999;
+  margin-top: 6px;
+  padding-left: 12px;
 }
 </style>
