@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <el-container>
+  <div class="container">
       <el-aside width="auto">
         <TheMenu />
       </el-aside>
@@ -18,7 +17,6 @@
           <router-view v-if="!$route.meta.keepAlive"></router-view>
         </el-main>
       </el-container>
-    </el-container>
     <!-- 屏幕内容保护组件 -->
     <LockScreen />
   </div>
@@ -45,6 +43,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+}
 .el-header {
   box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
   border-bottom: 1px solid rgba(0, 21, 41, .08);
@@ -52,6 +55,13 @@ export default {
 
 .el-main {
   background: #f7f7f7;
-  height: calc(100vh - 84px)
+  height: calc(100vh - 60px)
+}
+
+.el-aside {
+  background: var(--color-background);
+  .el-menu{
+    border-right: 1px solid var(--color-background);
+  }
 }
 </style>

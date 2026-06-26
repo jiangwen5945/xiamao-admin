@@ -17,7 +17,7 @@
         default-expand-all
       >
         <!-- <el-table-column prop="id" label="ID" /> -->
-        <el-table-column prop="name" label="名称" />
+        <el-table-column prop="name" label="名称" min-width="138"/>
         <el-table-column prop="icon" label="图标">
           <template #default="scope">
             <i :class="'el-icon-' + scope.row.icon" />
@@ -46,6 +46,12 @@
               {{ scope.row.show_sidebar === 1 ? '显示' : '隐藏' }}
             </el-tag>
           </template>
+        </el-table-column>
+        <el-table-column label="创建时间" width="170" prop="createdAt">
+          <template #default="scope">{{ scope.row.createdAt | dateTime }}</template>
+        </el-table-column>
+        <el-table-column label="更新时间" width="170" prop="updatedAt">
+          <template #default="scope">{{ scope.row.updatedAt | dateTime }}</template>
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="scope">
@@ -144,6 +150,7 @@
 </template>
 
 <script>
+import dayjs from 'dayjs'
 import { mapMutations } from 'vuex'
 import { getUserMenus } from '@/api'
 import { getElementIcons } from '@/utils/getElementIcons'
@@ -171,6 +178,11 @@ const QUERY_PARAM = { page: 1, pageSize: 99 }
 
 export default {
   name: "MenuList",
+  filters: {
+    dateTime(val) {
+      return val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '-'
+    },
+  },
 
   data() {
     return {

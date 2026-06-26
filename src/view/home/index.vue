@@ -540,7 +540,7 @@ export default {
 .count-wrap {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 16px;
 
   .count-card {

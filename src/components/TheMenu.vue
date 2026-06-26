@@ -71,7 +71,7 @@ export default {
 }
 
 .aside-menu {
-  height: 100vh;
+  // height: 100vh;
   min-height: 100vh;
   border-right: none;
   background: var(--color-background) !important;
