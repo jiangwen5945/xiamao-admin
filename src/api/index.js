@@ -1,4 +1,5 @@
 import http from "../utils/request";
+import Cookie from 'js-cookie';
 
 // 登录
 export const login = (data) => {
@@ -93,16 +94,20 @@ export const getOrderList = (params) => {
   return http.get("/order/list", { params });
 };
 
-export const deleteOrder = (data) => {
-  return http.post("/order/delete", data);
+export const getAdminOrderList = (params) => {
+  return http.get("/order/admin/list", { params });
 };
 
 export const createOrder = (data) => {
   return http.post("/order/add", data);
 };
 
-export const updateOrder = (data) => {
-  return http.post("/order/update", data);
+export const cancelOrder = (data) => {
+  return http.post("/order/cancel", data);
+};
+
+export const confirmOrder = (data) => {
+  return http.post("/order/confirm", data);
 };
 
 // 商品
@@ -287,4 +292,74 @@ export const updateFlashSaleItem = (data) => {
 };
 export const deleteFlashSaleItem = (data) => {
   return http.post("/marketing/flash-sale/delete-item", data);
+};
+
+// 财务管理 - 对账
+export const getFinanceList = (params) => {
+  return http.get("/finance/list", { params });
+};
+export const getFinanceDetail = (params) => {
+  return http.get("/finance/detail", { params });
+};
+export const getFinanceDetailItems = (params) => {
+  return http.get("/finance/detail-items", { params });
+};
+export const getFinanceOverview = () => {
+  return http.get("/finance/overview");
+};
+export const financeExport = (params) => {
+  const token = Cookie.get('token')
+  const query = new URLSearchParams(params).toString()
+  return fetch(`/api/finance/export?${query}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  }).then(res => res.blob()).then(blob => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `finance_${params.id}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  })
+};
+export const financeGenerate = (data) => {
+  return http.post("/finance/generate", data);
+};
+
+// 系统字典
+export const getDictAdminTypes = () => {
+  return http.get("/dict/admin/types");
+};
+export const getDictAdminList = (typeCode) => {
+  return http.get(`/dict/admin/list/${typeCode}`);
+};
+export const getDictList = (typeCode) => {
+  return http.get(`/dict/type/${typeCode}`);
+};
+export const createDictItem = (typeCode, data) => {
+  return http.post(`/dict/type/${typeCode}`, data);
+};
+export const updateDictItem = (id, data) => {
+  return http.put(`/dict/item/${id}`, data);
+};
+export const deleteDictItem = (id) => {
+  return http.delete(`/dict/item/${id}`);
+};
+
+// 物流管理
+export const shipOrder = (data) => {
+  return http.post("/logistics/ship", data);
+};
+export const getLogisticsPending = (params) => {
+  return http.get("/logistics/pending", { params });
+};
+export const getLogisticsList = (params) => {
+  return http.get("/logistics/list", { params });
+};
+export const getLogisticsDetail = (order_id) => {
+  return http.get("/logistics/detail", { params: { order_id } });
+};
+export const signLogistics = (data) => {
+  return http.post("/logistics/sign", data);
 };
