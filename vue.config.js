@@ -45,6 +45,16 @@ module.exports = defineConfig({
       ]
     }
   },
+  // sass-loader 配置：静默 Element UI 主题 SCSS 的 deprecation 警告
+  css: {
+    loaderOptions: {
+      sass: {
+        sassOptions: {
+          silenceDeprecations: ['color-functions', 'global-builtin', 'import', 'function-units', 'slash-div', 'legacy-js-api'],
+        },
+      },
+    },
+  },
   // webpack-dev-server开启IP和域名访问权限
   devServer: {
     historyApiFallback: true,

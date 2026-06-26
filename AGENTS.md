@@ -149,6 +149,8 @@ export default {
 - 发请求前剔除空参数（`''`/`null`/`undefined`/空数组）
 - 新增/编辑用 `el-dialog`，详情用 `el-drawer`
 - `modalType: 0` 新增，`modalType: 1` 编辑
+- 接口返回的时间字段统一用 `dayjs()` 处理后再展示
+- el-table-column 除了操作栏，不要设置 `width`，使用自适应宽度
 
 ## Git 提交规范
 

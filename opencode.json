@@ -8,5 +8,11 @@
       "**/.env",
       "**/*.log"
     ]
+  },
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+  "permission": {
+    "skill": "allow"
   }
 }
