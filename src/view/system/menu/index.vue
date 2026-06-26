@@ -159,12 +159,45 @@ const createDefaultForm = () => ({
   show_sidebar: 1,
 })
 
+/** 表单校验规则 */
+const formRules = {
+  name: [{ required: true, message: '名称不能为空', trigger: 'blur' }],
+  type: [{ required: true, message: '类型不能为空', trigger: 'change' }],
+  path: [{ required: true, message: '路由路径不能为空', trigger: 'blur' }],
+}
+
 const QUERY_PARAM = { page: 1, pageSize: 99 }
 
 const ICON_LIST = [
-  's-home', 'user', 'turn-off', 's-check', 's-marketing', 'box',
-  's-order', 's-grid', 's-claim', 'document', 'document-copy',
-  'edit-outline', 'files',
+  /* ===== 系统管理 ===== */
+  's-home', 'setting', 'user', 'lock', 'unlock', 'turn-off',
+  /* ===== 商品管理 ===== */
+  'goods', 'box', 's-goods', 'shopping-cart-1',
+  /* ===== 订单管理 ===== */
+  's-order', 's-claim', 's-check', 's-marketing', 's-promotion',
+  /* ===== 会员管理 ===== */
+  's-custom', 'avatar',
+  /* ===== 财务管理 ===== */
+  'money', 's-finance', 's-coin', 's-flag',
+  /* ===== 内容/文档 ===== */
+  'document', 'document-copy', 'document-delete', 'files', 'folder',
+  'folder-opened', 'folder-add', 'folder-delete', 'folder-checked',
+  /* ===== 数据统计 ===== */
+  's-data', 'data-analysis', 'data-board', 'data-line', 'data-bar', 'pie-chart',
+  /* ===== 消息通知 ===== */
+  'message', 'chat-dot-square', 'bell',
+  /* ===== 常用操作 ===== */
+  'edit', 'edit-outline', 'delete', 'delete-solid', 'plus', 'circle-plus',
+  'search', 'refresh', 'share', 'link', 'star-on', 'star-off',
+  /* ===== 布局导航 ===== */
+  'menu', 's-grid', 'more', 'rank', 'sort', 's-operation',
+  /* ===== 系统功能 ===== */
+  'full-screen', 'printer', 'upload', 'upload2', 'download', 'copy',
+  'scissors', 'crop', 'aim', 'paperclip',
+  /* ===== 其他 ===== */
+  's-platform', 's-cooperation', 's-opportunity', 's-ticket', 's-shop',
+  's-help', 'reading', 'notebook', 'collection', 'picture', 'phone',
+  'mobile-phone', 'service',
 ]
 
 export default {
@@ -178,11 +211,7 @@ export default {
       modalType: 0,
       iconList: ICON_LIST,
       form: createDefaultForm(),
-      rules: {
-        name: [{ required: true, message: '名称不能为空', trigger: 'blur' }],
-        type: [{ required: true, message: '类型不能为空', trigger: 'change' }],
-        path: [{ required: true, message: '路由路径不能为空', trigger: 'blur' }],
-      },
+      rules: formRules,
       queryParam: { ...QUERY_PARAM },
     };
   },
@@ -303,10 +332,15 @@ export default {
     },
 
     /** 提交表单 */
-    submit() {
-      this.$refs.form.validate(async (valid) => {
-        if (!valid) return;
-
+    async submit() {
+      try {
+        await new Promise((resolve, reject) => {
+          this.$refs.form.validate(valid => valid ? resolve() : reject(new Error('校验不通过')))
+        })
+      } catch {
+        return
+      }
+      try {
         if (this.modalType === 0) {
           await this.$api.createMenu(this.form);
         } else {
@@ -319,14 +353,17 @@ export default {
           type: 'success',
           message: this.modalType === 0 ? '添加成功' : '编辑成功',
         });
-      });
+      } catch (e) {
+        console.error('操作失败', e)
+      }
     },
 
     /** 关闭弹窗并重置表单 */
-    handleClose() {
+    handleClose(done) {
       this.form = createDefaultForm()
+      this.$refs.form?.clearValidate();
       this.isVisible = false;
-      this.$refs.form.clearValidate();
+      if (typeof done === 'function') done();
     },
   },
 };

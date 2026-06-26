@@ -190,6 +190,11 @@ export const deleteLog = (data) => {
   return http.post("/log/delete", data);
 };
 
+// 数据仪表盘
+export const getDashboardData = () => {
+  return http.get("/data-analysis/dashboard");
+};
+
 // 售后
 export const getAfterSalesList = (params) => {
   return http.get("/after-sales/admin/list", { params });

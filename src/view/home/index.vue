@@ -101,10 +101,11 @@
 
     <!-- 右侧栏 -->
     <div class="dashboard-right">
-      <!-- 4 个统计总览卡片 -->
+      <!-- 统计总览卡片 -->
       <div class="count-wrap">
         <div
           class="count-card"
+          :class="item.spanRows === 2 ? 'span-rows': ''"
           v-for="item in countData"
           :key="item.name"
           :style="{ background: item.bg }"
@@ -130,13 +131,13 @@
       <div class="graph-wrap">
         <div class="card">
           <div class="card-header">
-            <span>分类销量分布</span>
+            <span>热销商品 TOP10</span>
           </div>
           <div ref="echarts2" style="height: 240px"></div>
         </div>
         <div class="card">
           <div class="card-header">
-            <span>订单状态分布</span>
+            <span>商品分类</span>
           </div>
           <div ref="echarts3" style="height: 240px"></div>
         </div>
@@ -149,51 +150,6 @@
 import * as echarts from "echarts";
 import dayjs from "dayjs";
 
-// ---------- 图表静态数据 ----------
-
-// 近 7 日日期标签
-const weekDays = [
-  "06-17",
-  "06-18",
-  "06-19",
-  "06-20",
-  "06-21",
-  "06-22",
-  "06-23",
-];
-
-// 折线图：销售额 + 订单量双线
-const lineData = {
-  date: weekDays,
-  data: [
-    { 销售额: 3200, 订单量: 28 },
-    { 销售额: 4800, 订单量: 35 },
-    { 销售额: 3600, 订单量: 22 },
-    { 销售额: 6200, 订单量: 41 },
-    { 销售额: 5400, 订单量: 38 },
-    { 销售额: 7800, 订单量: 52 },
-    { 销售额: 8600, 订单量: 46 },
-  ],
-};
-
-// 柱状图：各分类销量
-const barData = [
-  { name: "数码", value: 320 },
-  { name: "服装", value: 480 },
-  { name: "食品", value: 260 },
-  { name: "家电", value: 540 },
-  { name: "图书", value: 190 },
-];
-
-// 饼图：订单状态占比
-const pieData = [
-  { name: "待支付", value: 15 },
-  { name: "已支付", value: 30 },
-  { name: "已发货", value: 25 },
-  { name: "已完成", value: 42 },
-  { name: "已取消", value: 8 },
-];
-
 export default {
   name: "HomeView",
   filters: {
@@ -203,31 +159,47 @@ export default {
   },
   data() {
     return {
-      // 统计总览卡片配置（name 与 API 返回的 label 匹配时自动覆盖 value）
+      dashboardData: null,
+      dashboardLoading: false,
+      // 统计总览卡片
       countData: [
-        {
+         {
           name: "今日销售额",
-          value: "¥ 12,860",
+          value: "-",
           icon: "money",
           bg: "linear-gradient(135deg,#667eea,#764ba2)",
-          diff: "较昨日 +12%",
+          spanRows: 2,
+          diff: '-'
         },
         {
           name: "今日订单",
-          value: "24",
+          value: "-",
           icon: "s-order",
           bg: "linear-gradient(135deg,#f093fb,#f5576c)",
-          diff: "待处理 3",
+          spanRows: 2,
+          diff: '-'
+        },
+        {
+          name: "总销售额",
+          value: "-",
+          icon: "s-finance",
+          bg: "linear-gradient(135deg,#a18cd1,#fbc2eb)",
+        },
+         {
+          name: "全部订单",
+          value: "-",
+          icon: "s-data",
+          bg: "linear-gradient(135deg,#f6d365,#fda085)",
         },
         {
           name: "商品总数",
-          value: "0",
+          value: "-",
           icon: "goods",
           bg: "linear-gradient(135deg,#4facfe,#00f2fe)",
         },
         {
           name: "会员总数",
-          value: "0",
+          value: "-",
           icon: "user",
           bg: "linear-gradient(135deg,#43e97b,#38f9d7)",
         },
@@ -267,40 +239,44 @@ export default {
     },
   },
   async mounted() {
-    this.getCountData();
+    await this.getDashboardData();
     this.getOrders();
-    this.initChart();
   },
   // keep-alive 激活时刷新数据
-  activated() {
+  async activated() {
+    await this.getDashboardData();
     this.getOrders();
-    this.getCountData();
   },
   methods: {
-    // 从 API 获取商品和会员总数，更新统计卡片
-    async getCountData() {
+    // 获取仪表盘全部数据
+    async getDashboardData() {
+      this.dashboardLoading = true;
       try {
-        const [productRes, memberRes] = await Promise.all([
-          this.$api
-            .getProductList()
-            .catch(() => ({ total: 0 })),
-          this.$api
-            .getMemberList()
-            .catch(() => ({ total: 0 })),
-        ]);
-        const labels = {
-          商品总数: productRes.total || 0,
-          会员总数: memberRes.total || 0,
+        const res = await this.$api.getDashboardData();
+        this.dashboardData = res;
+        // 更新统计卡片
+        const kpi = res.kpi || {};
+        const keyMap = {
+          "今日销售额": "today_sales",
+          "今日订单": "today_orders",
+          "总销售额": "total_sales",
+          "全部订单": "total_orders",
+          "商品总数": "total_products",
+          "会员总数": "total_members",
         };
-        this.countData = this.countData.map((item) => ({
-          ...item,
-          value:
-            labels[item.name] !== undefined
-              ? String(labels[item.name])
-              : item.value,
-        }));
+        this.countData = this.countData.map((item) => {
+          const key = keyMap[item.name];
+          let value = kpi[key];
+          if (value == null) value = "-";
+          else if (item.name.includes("销售额")) value = "¥ " + value.toLocaleString();
+          else value = String(value);
+          return { ...item, value };
+        });
+        this.$nextTick(() => this.initChart());
       } catch (e) {
-        console.warn(e);
+        console.warn("获取仪表盘数据失败", e);
+      } finally {
+        this.dashboardLoading = false;
       }
     },
     // 获取最新订单
@@ -321,42 +297,70 @@ export default {
     },
     // 初始化所有图表
     initChart() {
-      this.initLineChart();
-      this.initBarChart();
-      this.initPieChart();
+      const data = this.dashboardData;
+      if (!data) return;
+      this.initLineChart(data.sales_trend);
+      this.initBarChart(data.top_products);
+      this.initPieChart(data.category_sales);
     },
-    // 折线图：近 7 日销售额 + 订单量趋势
-    initLineChart() {
+    // 折线图：近 7 日销售趋势（双 Y 轴）
+    initLineChart(salesTrend) {
       const chart = echarts.init(this.$refs.echarts1);
-      const legendKeys = Object.keys(lineData.data[0]);
-      const series = legendKeys.map((key) => ({
-        name: key,
-        type: "line",
-        smooth: true,
-        data: lineData.data.map((item) => item[key]),
-      }));
+      if (!salesTrend || !salesTrend.length) {
+        chart.setOption({ title: { text: "暂无数据", left: "center", top: "center" } });
+        return;
+      }
+      // 取最近 7 天
+      const recent = salesTrend.slice(-7);
+      const dates = recent.map((r) => dayjs(r.date).format("MM-DD"));
       chart.setOption({
-        legend: { data: legendKeys },
-        grid: { left: 50, right: 20, bottom: 20, top: 30 },
+        legend: { data: ["销售额", "订单量"] },
+        grid: { left: 60, right: 60, bottom: 20, top: 30 },
         tooltip: { trigger: "axis" },
-        xAxis: { type: "category", data: lineData.date, boundaryGap: false },
-        yAxis: { type: "value" },
-        series,
+        xAxis: { type: "category", data: dates, boundaryGap: false },
+        yAxis: [
+          { type: "value", name: "销售额（元）", min: 0 },
+          { type: "value", name: "订单量", min: 0 },
+        ],
+        series: [
+          {
+            name: "销售额",
+            type: "line",
+            smooth: true,
+            yAxisIndex: 0,
+            data: recent.map((r) => r.amount),
+          },
+          {
+            name: "订单量",
+            type: "line",
+            smooth: true,
+            yAxisIndex: 1,
+            data: recent.map((r) => r.orders),
+          },
+        ],
       });
     },
-    // 柱状图：分类销量分布（渐变柱体）
-    initBarChart() {
+    // 柱状图：热销商品 TOP10
+    initBarChart(topProducts) {
       const chart = echarts.init(this.$refs.echarts2);
+      if (!topProducts || !topProducts.length) {
+        chart.setOption({ title: { text: "暂无数据", left: "center", top: "center" } });
+        return;
+      }
       chart.setOption({
-        grid: { left: 40, right: 20, bottom: 30, top: 10 },
+        grid: { left: 40, right: 20, bottom: 50, top: 10 },
         tooltip: { trigger: "axis" },
-        xAxis: { type: "category", data: barData.map((item) => item.name) },
+        xAxis: {
+          type: "category",
+          data: topProducts.map((r) => r.name),
+          axisLabel: { rotate: 30, fontSize: 10 },
+        },
         yAxis: { type: "value" },
         series: [
           {
             type: "bar",
-            data: barData.map((item) => ({
-              value: item.value,
+            data: topProducts.map((r) => ({
+              value: r.amount,
               itemStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                   { offset: 0, color: "#4facfe" },
@@ -364,17 +368,21 @@ export default {
                 ]),
               },
             })),
-            barWidth: 28,
+            barWidth: 22,
             borderRadius: [4, 4, 0, 0],
           },
         ],
       });
     },
-    // 饼图（环形图）：订单状态分布
-    initPieChart() {
+    // 饼图（环形图）：商品分类
+    initPieChart(categorySales) {
       const chart = echarts.init(this.$refs.echarts3);
+      if (!categorySales || !categorySales.length) {
+        chart.setOption({ title: { text: "暂无数据", left: "center", top: "center" } });
+        return;
+      }
       chart.setOption({
-        tooltip: { trigger: "item" },
+        tooltip: { trigger: "item", formatter: "{b}: ¥{c}" },
         series: [
           {
             type: "pie",
@@ -385,7 +393,7 @@ export default {
             emphasis: {
               label: { show: true, fontSize: 14, fontWeight: "bold" },
             },
-            data: pieData,
+            data: categorySales.map((r) => ({ name: r.name, value: r.amount })),
           },
         ],
       });
@@ -395,53 +403,50 @@ export default {
 </script>
 
 <style scoped lang="scss">
-/* 仪表盘 Grid 两栏布局，两列等高 */
 .dashboard {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 20px;
+
+  .dashboard-top {
+    grid-column: 1/-1;
+  }
 }
 
-.dashboard-top {
-  grid-column: 1/-1;
-}
-
-/* 自定义卡片 */
 .card {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
 
-.card-spacing {
-  margin-top: 16px;
-}
+  &-spacing {
+    margin-top: 16px;
+  }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  padding-left: 12px;
-  position: relative;
+  &-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-left: 12px;
+    position: relative;
 
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 16px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, #667eea, #764ba2);
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 16px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #667eea, #764ba2);
+    }
   }
 }
 
-/* ---------- 用户信息卡片 ---------- */
 .user-wrap {
   display: flex;
   align-items: center;
@@ -460,14 +465,17 @@ export default {
       margin-bottom: 4px;
       color: #303030;
     }
+
     .role {
       font-size: 13px;
       color: #667eea;
       margin-bottom: 4px;
     }
+
     .dept {
       font-size: 12px;
       color: #999;
+
       i {
         margin-right: 2px;
       }
@@ -480,100 +488,111 @@ export default {
     line-height: 26px;
     font-size: 13px;
     color: #666;
+
     span {
       color: #999;
     }
   }
 }
 
-/* ---------- 快捷操作 ---------- */
-
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-}
 
-.quick-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f4f6f9;
-  }
-
-  .quick-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+  .quick-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
+    gap: 10px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
 
-  .quick-label {
-    font-size: 13px;
-    color: #333;
+    &:hover {
+      background: #f4f6f9;
+    }
+
+    .quick-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .quick-label {
+      font-size: 13px;
+      color: #333;
+    }
   }
 }
 
-/* 快捷操作卡片独占一行 */
 .quick-card {
   grid-column: 1 / -1;
   margin-top: 16px;
 }
 
-/* ---------- 统计总览卡片 ---------- */
 .count-wrap {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 16px;
-}
 
-.count-card {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  border-radius: 8px;
-  color: #fff;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
+  .count-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 8px;
+    color: #fff;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 
-.count-icon {
-  font-size: 32px;
-  margin-right: 14px;
-  opacity: 0.9;
-}
+    &.span-rows {
+      grid-row: span 2;
 
-.count-body {
-  .count-value {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0;
-    line-height: 1.3;
+      .count-icon {
+        font-size: 34px;
+      }
+
+      .count-body .count-value {
+        font-size: 24px;
+      }
+    }
+
+    .count-icon {
+      font-size: 24px;
+      margin-right: 10px;
+      opacity: 0.9;
+    }
+
+    .count-body {
+      .count-value {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.3;
+      }
+
+      .count-label {
+        font-size: 11px;
+        margin: 2px 0 0;
+        opacity: 0.8;
+      }
+
+      .count-diff {
+        font-size: 11px;
+        margin: 2px 0 0;
+        opacity: 0.7;
+      }
+    }
   }
-  .count-label {
-    font-size: 12px;
-    margin: 2px 0 0;
-    opacity: 0.8;
-  }
-  .count-diff {
-    font-size: 11px;
-    margin: 2px 0 0;
-    opacity: 0.7;
-  }
 }
 
-/* ---------- 图表并排区域 ---------- */
 .graph-wrap {
   display: flex;
   gap: 16px;
@@ -589,19 +608,19 @@ export default {
   max-width: 428px;
   display: flex;
   flex-direction: column;
-}
 
-.order-table-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+  .order-table-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 
-.order-empty {
-  text-align: center;
-  color: #999;
-  padding: 32px 0;
-  font-size: 14px;
+  .order-empty {
+    text-align: center;
+    color: #999;
+    padding: 32px 0;
+    font-size: 14px;
+  }
 }
 </style>

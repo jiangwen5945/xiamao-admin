@@ -122,7 +122,7 @@
           </el-form-item>
           <el-form-item label="支付方式">
             <el-select v-model="form.payment_method" placeholder="请选择支付方式">
-              <el-option :label="item"  v-for="(item, index) in paymentMethodList" :key="index"/>
+              <el-option :label="item.label" :value="item.value" v-for="item in paymentMethodList" :key="item.value"/>
             </el-select>
           </el-form-item>
         </div>
@@ -191,7 +191,20 @@ const createDefaultForm = () => ({
   status: 0, payment_method: '', consignee: '', consignee_phone: '',
   shipping_address: '', remark: '',
 })
-const PAYMENT_METHOD_LIST = ['支付宝', '微信', '银联', '货到付款']
+// const PAYMENT_METHOD_LIST = ['支付宝', '微信', '银联', '货到付款']
+const PAYMENT_METHOD_LIST = [{
+  label: '支付宝',
+  value: 0
+},{
+  label: '微信',
+  value: 1
+},{
+  label: '银联',
+  value: 2
+},{
+  label: '货到付款',
+  value: 3
+},]
 
 export default {
   name: "OrderList",
@@ -317,8 +330,9 @@ export default {
     },
     handleClose() {
       this.form = createDefaultForm()
-      this.isVisible = false;
       this.$refs.form.clearValidate();
+      this.isVisible = false;
+
     },
     statusText(status) {
       const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' }

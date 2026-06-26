@@ -25,7 +25,7 @@
               </el-menu-item>
             </el-menu-item-group>
         </el-submenu>
-        <el-menu-item v-else-if="item.icon" :key="`${item.path}-item`" :index="item.path" @click="handleUrl(item)">
+        <el-menu-item v-else :key="`${item.path}-item`" :index="item.path" @click="handleUrl(item)">
             <i :class="`el-icon-${item.icon}`"></i>
             <span slot="title">{{item.name}}</span>
         </el-menu-item>
