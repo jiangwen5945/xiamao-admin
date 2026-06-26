@@ -118,6 +118,9 @@ export const createProduct = (data) => {
 export const updateProduct = (data) => {
   return http.post("/product/update", data);
 };
+export const getProductsNotInFlashSale = (params) => {
+  return http.get("/product/not-in-flash-sale", { params });
+};
 export const deleteProduct = (data) => {
   return http.post("/product/delete", data);
 };
@@ -173,10 +176,41 @@ export const getData = () => {
 
 // 通知
 export const getNotifications = (params) => {
-  return http.get("/notification/list", { params });
+  return http.get("/notification/message/list", { params });
 };
 export const readNotification = (data) => {
-  return http.post("/notification/read", data);
+  return http.post("/notification/message/mark-read", data);
+};
+
+// 通知模板
+export const getNotificationTemplateList = (params) => {
+  return http.get("/notification/template/list", { params });
+};
+export const getNotificationTemplateDetail = (params) => {
+  return http.get("/notification/template/detail", { params });
+};
+export const addNotificationTemplate = (data) => {
+  return http.post("/notification/template/add", data);
+};
+export const updateNotificationTemplate = (data) => {
+  return http.post("/notification/template/update", data);
+};
+export const deleteNotificationTemplate = (data) => {
+  return http.post("/notification/template/delete", data);
+};
+
+// 站内信
+export const getSiteMessageList = (params) => {
+  return http.get("/notification/message/list", { params });
+};
+export const getSiteMessageDetail = (params) => {
+  return http.get("/notification/message/detail", { params });
+};
+export const sendSiteMessage = (data) => {
+  return http.post("/notification/message/send", data);
+};
+export const markSiteMessageRead = (data) => {
+  return http.post("/notification/message/mark-read", data);
 };
 
 // 操作日志
@@ -204,4 +238,53 @@ export const approveAfterSales = (data) => {
 };
 export const rejectAfterSales = (data) => {
   return http.post("/after-sales/admin/reject", data);
+};
+
+// 营销活动 - 优惠券
+export const getCouponList = (params) => {
+  return http.get("/marketing/coupon/list", { params });
+};
+export const getCouponDetail = (params) => {
+  return http.get("/marketing/coupon/detail", { params });
+};
+export const createCoupon = (data) => {
+  return http.post("/marketing/coupon/add", data);
+};
+export const updateCoupon = (data) => {
+  return http.post("/marketing/coupon/update", data);
+};
+export const deleteCoupon = (data) => {
+  return http.post("/marketing/coupon/delete", data);
+};
+export const issueCoupon = (data) => {
+  return http.post("/marketing/coupon/issue", data);
+};
+export const getCouponIssueLog = (params) => {
+  return http.get("/marketing/coupon/issue-log", { params });
+};
+
+// 营销活动 - 秒杀
+export const getFlashSaleList = (params) => {
+  return http.get("/marketing/flash-sale/list", { params });
+};
+export const getFlashSaleDetail = (params) => {
+  return http.get("/marketing/flash-sale/detail", { params });
+};
+export const createFlashSale = (data) => {
+  return http.post("/marketing/flash-sale/add", data);
+};
+export const updateFlashSale = (data) => {
+  return http.post("/marketing/flash-sale/update", data);
+};
+export const deleteFlashSale = (data) => {
+  return http.post("/marketing/flash-sale/delete", data);
+};
+export const addFlashSaleItem = (data) => {
+  return http.post("/marketing/flash-sale/add-item", data);
+};
+export const updateFlashSaleItem = (data) => {
+  return http.post("/marketing/flash-sale/update-item", data);
+};
+export const deleteFlashSaleItem = (data) => {
+  return http.post("/marketing/flash-sale/delete-item", data);
 };

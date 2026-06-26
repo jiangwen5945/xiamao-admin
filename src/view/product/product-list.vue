@@ -34,6 +34,12 @@
           </el-col>
         </div>
       </FilterBarItem>
+      <FilterBarItem label="活动">
+        <el-select v-model="queryParam.is_flash_sale" placeholder="全部" clearable>
+          <el-option label="参与" :value="1" />
+          <el-option label="未参与" :value="0" />
+        </el-select>
+      </FilterBarItem>
     </FilterBar>
 
      <div class="table-header">
@@ -46,7 +52,7 @@
     <div class="table-content">
       <el-table :data="tableData" stripe @selection-change="handleSelectionChange" @sort-change="handleSortChange">
         <el-table-column type="selection" width="45" />
-        <el-table-column prop="name" label="商品名称" min-width="140">
+        <el-table-column prop="name" label="商品名称" min-width="150">
           <template #default="scope">
             <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">
               {{ scope.row.name }}
@@ -65,7 +71,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="price" label="价格" width="90" sortable="custom" />
-        <el-table-column prop="brand" label="品牌" width="100" />
+        <el-table-column prop="brand" label="品牌" min-width="100" />
         <el-table-column label="分类" width="100">
           <template #default="scope">
             {{ scope.row.Category?.name || '-' }}
@@ -86,11 +92,21 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="备注" min-width="120" show-overflow-tooltip>
+        <el-table-column label="活动" width="100">
+          <template #default="scope">
+            <template v-if="scope.row.flash_sales">
+              <el-tag v-for="fs in scope.row.flash_sales" :key="fs.id" type="warning" size="mini" style="margin-right:4px">
+                {{ fs.name }}
+              </el-tag>
+            </template>
+            <span v-else class="detail-empty">-</span>
+          </template>
+        </el-table-column>
+        <!-- <el-table-column label="备注" min-width="120" show-overflow-tooltip>
           <template #default="scope">
             {{ scope.row.remark || '-' }}
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="scope">
             <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
@@ -273,6 +289,7 @@ const QUERY_PARAM = {
   price_min: '',
   price_max: '',
   status: '',
+  is_flash_sale: '',
   tags: [],
   sortField: '',
   sortOrder: '',

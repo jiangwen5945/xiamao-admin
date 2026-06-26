@@ -150,6 +150,12 @@ export default {
 - 新增/编辑用 `el-dialog`，详情用 `el-drawer`
 - `modalType: 0` 新增，`modalType: 1` 编辑
 
+## Git 提交规范
+
+提交信息格式：`<type>: <中文简述>`，可选换行后逐条列出具体改动。
+
+`type` 使用英文小写：`feat` / `fix` / `refactor` / `style` / `docs` / `chore`
+
 ## API 路径格式
 
 | 动作 | 方法 | 路径            |

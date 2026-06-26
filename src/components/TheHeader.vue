@@ -62,7 +62,10 @@
         <div v-for="item in noticeList" :key="item.id" class="notice-item" :class="{ unread: !item.is_read }" @click="handleReadNotice(item)">
           <div class="notice-content">
             <span class="notice-dot" v-if="!item.is_read" />
-            <span class="notice-text">{{ item.content }}</span>
+            <div class="notice-text-wrapper">
+              <span class="notice-title" v-if="item.title">{{ item.title }}</span>
+              <span class="notice-text">{{ item.content }}</span>
+            </div>
           </div>
           <div class="notice-time">{{ item.created_at }}</div>
         </div>
@@ -113,6 +116,10 @@ export default {
       this.$store.dispatch('switchCurrentRole', { role: this.userRoles[0], router: this.$router })
     }
     this.fetchNotifications()
+    this.$root.$on('notification-sent', this.fetchNotifications)
+  },
+  beforeDestroy() {
+    this.$root.$off('notification-sent', this.fetchNotifications)
   },
   methods: {
     // 折叠/展开侧边菜单
@@ -152,18 +159,16 @@ export default {
       this.noticeDrawerVisible = true
       this.fetchNotifications()
     },
-    fetchNotifications() {
-      this.noticeList = [
-        { id: 1, content: '订单 #20240625001 已支付，等待发货', created_at: '2024-06-25 10:30', is_read: false },
-        { id: 2, content: '商品「机械键盘」库存不足，当前仅剩 3 件', created_at: '2024-06-25 09:15', is_read: false },
-        { id: 3, content: '新用户「张三」已注册', created_at: '2024-06-24 16:00', is_read: false },
-        { id: 4, content: '订单 #20240624088 已签收', created_at: '2024-06-24 14:20', is_read: true },
-        { id: 5, content: '系统将于 6月26日 02:00-04:00 进行维护升级', created_at: '2024-06-24 11:00', is_read: true },
-      ]
+    async fetchNotifications() {
+      const userId = this.userInfo?.id
+      if (!userId) return
+      const res = await this.$api.getNotifications({ receiver_type: 'admin', receiver_id: userId })
+      this.noticeList = res.list || []
       this.unreadCount = this.noticeList.filter(n => !n.is_read).length
     },
-    handleReadNotice(item) {
+    async handleReadNotice(item) {
       if (item.is_read) return
+      await this.$api.readNotification({ id: item.id })
       item.is_read = true
       this.unreadCount = Math.max(0, this.unreadCount - 1)
     },
@@ -270,6 +275,18 @@ export default {
   background: #409eff;
   flex-shrink: 0;
   margin-top: 6px;
+}
+
+.notice-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notice-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
 }
 
 .notice-text {
