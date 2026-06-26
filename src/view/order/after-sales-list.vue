@@ -26,11 +26,10 @@
     <!-- 数据表格 -->
     <div class="table-content">
       <el-table :data="tableData" stripe>
-        <el-table-column prop="id" label="售后单ID" />
-        <el-table-column label="订单号" >
+        <el-table-column label="售后单ID" >
           <template #default="scope">
             <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">
-              {{ scope.row.Order?.order_no || '-' }}
+              {{ scope.row.id }}
             </el-link>
           </template>
         </el-table-column>

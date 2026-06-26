@@ -23,15 +23,13 @@
     <!-- 操作栏 -->
     <div class="table-header">
       <div class="left">
-        <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
-        <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleDelete(selectedIds)">删除选中</el-button>
+        <el-button type="primary" size="medium" @click="handleAdd">新增订单</el-button>
       </div>
     </div>
 
     <!-- 数据表格 -->
     <div class="table-content">
-      <el-table :data="tableData" stripe @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="45" />
+      <el-table :data="tableData" stripe>
         <el-table-column label="订单号" min-width="180">
           <template #default="scope">
             <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">{{ scope.row.order_no }}</el-link>
@@ -50,7 +48,7 @@
         <el-table-column prop="actual_amount" label="实付金额" width="110">
           <template #default="scope">￥{{ scope.row.actual_amount }}</template>
         </el-table-column>
-        <el-table-column prop="payment_method" label="支付方式" width="100" >
+        <el-table-column prop="payment_method" label="支付方式" width="100">
           <template #default="scope">
             <el-tag size="mini" v-if=" scope.row.payment_method">{{ scope.row.payment_method }}</el-tag>
             <span v-else>-</span>
@@ -65,15 +63,28 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180" />
+        <el-table-column prop="createdAt" label="创建时间" width="180">
+          <template #default="scope">
+            {{ scope.row.createdAt | dateTime }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="scope">
-            <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" size="mini" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button
+              v-if="scope.row.status === 0"
+              size="mini"
+              @click="handleCancel(scope.row)"
+            >取消</el-button>
+            <el-button
+              v-if="scope.row.status === 2"
+              type="primary"
+              size="mini"
+              @click="handleConfirm(scope.row)"
+            >确认收货</el-button>
+            <span v-if="![0, 2].includes(scope.row.status)" class="no-action">-</span>
           </template>
         </el-table-column>
       </el-table>
-      <!-- 分页 -->
       <el-pagination
         layout="total, prev, pager, next"
         :total="total"
@@ -84,66 +95,64 @@
       />
     </div>
 
-    <!-- 新增/编辑弹窗 -->
+    <!-- 新增订单弹窗 -->
     <el-dialog
-      :title="modalType ? '修改订单' : '新增订单'"
-      :visible="isVisible"
-      :before-close="handleClose"
+      title="新增订单"
+      :visible="addVisible"
+      :before-close="handleAddClose"
       center
       :destroy-on-close="true"
-      width="720px"
+      width="800px"
     >
-      <el-form ref="form" :model="form" :rules="formRules" label-width="100px" class="dialog-form">
+      <el-form ref="addForm" :model="addForm" :rules="addFormRules" label-width="100px">
         <div class="form-row">
-          <el-form-item label="订单号" prop="order_no">
-            <el-input v-model="form.order_no" placeholder="请输入订单号" :disabled="modalType === 1" />
-          </el-form-item>
           <el-form-item label="会员ID" prop="member_id">
-            <el-input-number v-model="form.member_id" :min="1" />
+            <el-input-number v-model="addForm.member_id" :min="1" />
           </el-form-item>
-        </div>
-        <div class="form-row">
-          <el-form-item label="商品总额" prop="total_amount">
-            <el-input-number v-model="form.total_amount" :precision="2" :min="0" />
-          </el-form-item>
-          <el-form-item label="实付金额" prop="actual_amount">
-            <el-input-number v-model="form.actual_amount" :precision="2" :min="0" />
-          </el-form-item>
-        </div>
-        <div class="form-row">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="form.status" placeholder="请选择">
-              <el-option label="待付款" :value="0" />
-              <el-option label="待发货" :value="1" />
-              <el-option label="待收货" :value="2" />
-              <el-option label="已完成" :value="3" />
-              <el-option label="已取消" :value="4" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="支付方式">
-            <el-select v-model="form.payment_method" placeholder="请选择支付方式">
-              <el-option :label="item.label" :value="item.value" v-for="item in paymentMethodList" :key="item.value"/>
-            </el-select>
-          </el-form-item>
-        </div>
-        <div class="form-row">
           <el-form-item label="收货人" prop="consignee">
-            <el-input v-model="form.consignee" placeholder="请输入收货人" />
-          </el-form-item>
-          <el-form-item label="收货电话" prop="consignee_phone">
-            <el-input v-model="form.consignee_phone" placeholder="请输入收货电话" />
+            <el-input v-model="addForm.consignee" placeholder="请输入收货人" />
           </el-form-item>
         </div>
-        <el-form-item label="收货地址" prop="shipping_address">
-          <el-input v-model="form.shipping_address" type="textarea" :rows="2" placeholder="请输入收货地址" />
-        </el-form-item>
+        <div class="form-row">
+          <el-form-item label="收货电话" prop="consignee_phone">
+            <el-input v-model="addForm.consignee_phone" placeholder="请输入收货电话" />
+          </el-form-item>
+          <el-form-item label="收货地址" prop="shipping_address">
+            <el-input v-model="addForm.shipping_address" placeholder="请输入收货地址" />
+          </el-form-item>
+        </div>
         <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+          <el-input v-model="addForm.remark" type="textarea" :rows="2" placeholder="可选" />
+        </el-form-item>
+
+        <el-form-item label="商品明细" required>
+          <div class="order-items">
+            <div class="order-item" v-for="(item, index) in addForm.items" :key="index">
+              <el-select
+                v-model="item.product_id"
+                filterable
+                placeholder="搜索选择商品"
+                style="width:240px"
+                @change="val => handleProductChange(val, index)"
+              >
+                <el-option
+                  v-for="p in productList"
+                  :key="p.id"
+                  :label="`${p.name} (￥${p.price})`"
+                  :value="p.id"
+                />
+              </el-select>
+              <el-input-number v-model="item.quantity" :min="1" :max="999" style="width:120px" />
+              <span class="item-subtotal">￥{{ calcSubtotal(index) }}</span>
+              <el-button type="danger" size="mini" icon="el-icon-delete" circle @click="removeItem(index)" />
+            </div>
+            <el-button type="primary" size="mini" icon="el-icon-plus" @click="addItem">添加商品</el-button>
+          </div>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="handleClose">取 消</el-button>
-        <el-button type="primary" @click="submit">确 定</el-button>
+        <el-button @click="handleAddClose">取 消</el-button>
+        <el-button type="primary" :loading="addLoading" @click="submitAdd">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -172,9 +181,33 @@
           <el-descriptions-item label="收货人">{{ currentDetail.consignee }}</el-descriptions-item>
           <el-descriptions-item label="收货电话">{{ currentDetail.consignee_phone }}</el-descriptions-item>
           <el-descriptions-item label="收货地址">{{ currentDetail.shipping_address }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div class="drawer-section-title">商品明细</div>
+        <el-table :data="currentDetail.OrderItems || []" size="small" stripe>
+          <el-table-column label="商品" min-width="180">
+            <template #default="scope">
+              <div class="product-cell">
+                <img v-if="scope.row.product_image" :src="scope.row.product_image" class="product-img" />
+                <span>{{ scope.row.product_name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="单价" width="100">
+            <template #default="scope">￥{{ scope.row.price }}</template>
+          </el-table-column>
+          <el-table-column label="数量" width="80">
+            <template #default="scope">{{ scope.row.quantity }}</template>
+          </el-table-column>
+          <el-table-column label="小计" width="100">
+            <template #default="scope">￥{{ scope.row.subtotal }}</template>
+          </el-table-column>
+        </el-table>
+
+        <el-descriptions :column="1" border class="drawer-descriptions">
           <el-descriptions-item label="备注">{{ currentDetail.remark || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ currentDetail.createdAt }}</el-descriptions-item>
-          <el-descriptions-item label="更新时间">{{ currentDetail.updatedAt }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ currentDetail.createdAt | dateTime }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ currentDetail.updatedAt | dateTime }}</el-descriptions-item>
         </el-descriptions>
       </div>
     </el-drawer>
@@ -184,58 +217,51 @@
 <script>
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
+import dayjs from 'dayjs'
 
 const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '', status: '', consignee: '' }
-const createDefaultForm = () => ({
-  id: '', order_no: '', member_id: '', total_amount: 0, actual_amount: 0,
-  status: 0, payment_method: '', consignee: '', consignee_phone: '',
-  shipping_address: '', remark: '',
+const createDefaultAddForm = () => ({
+  member_id: 1,
+  consignee: '',
+  consignee_phone: '',
+  shipping_address: '',
+  remark: '',
+  items: [{ product_id: '', quantity: 1 }],
 })
-// const PAYMENT_METHOD_LIST = ['支付宝', '微信', '银联', '货到付款']
-const PAYMENT_METHOD_LIST = [{
-  label: '支付宝',
-  value: 0
-},{
-  label: '微信',
-  value: 1
-},{
-  label: '银联',
-  value: 2
-},{
-  label: '货到付款',
-  value: 3
-},]
 
 export default {
   name: "OrderList",
   components: { FilterBar, FilterBarItem },
+  filters: {
+    dateTime(val) {
+      return val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '-'
+    },
+  },
   data() {
     return {
       loading: false,
       tableData: [],
       total: 0,
-      isVisible: false,
-      modalType: 0,
-      form: createDefaultForm(),
       queryParam: { ...QUERY_PARAM },
-      formRules: {
-        order_no: [{ required: true, message: "订单号不能为空", trigger: "blur" }],
-        member_id: [{ required: true, message: "会员ID不能为空", trigger: "blur" }],
-        total_amount: [{ required: true, message: "商品总额不能为空", trigger: "blur" }],
-        actual_amount: [{ required: true, message: "实付金额不能为空", trigger: "blur" }],
-        consignee: [{ required: true, message: "收货人不能为空", trigger: "blur" }],
-        consignee_phone: [{ required: true, message: "收货电话不能为空", trigger: "blur" }],
-        shipping_address: [{ required: true, message: "收货地址不能为空", trigger: "blur" }],
+      addVisible: false,
+      addLoading: false,
+      addForm: createDefaultAddForm(),
+      addFormRules: {
+        member_id: [{ required: true, message: '会员ID不能为空', trigger: 'blur' }],
+        consignee: [{ required: true, message: '收货人不能为空', trigger: 'blur' }],
+        consignee_phone: [{ required: true, message: '收货电话不能为空', trigger: 'blur' }],
+        shipping_address: [{ required: true, message: '收货地址不能为空', trigger: 'blur' }],
       },
-      selectedIds: [],
+      productList: [],
+      productMap: {},
       detailVisible: false,
       currentDetail: {},
-      paymentMethodList: PAYMENT_METHOD_LIST,
     };
   },
 
   async created() {
     this.getList();
+    this.loadProducts();
   },
   activated() {
     this.getList();
@@ -249,11 +275,23 @@ export default {
         if (Array.isArray(params[k]) && !params[k].length) delete params[k]
       })
       try {
-        const res = await this.$api.getOrderList(params);
+        const res = await this.$api.getAdminOrderList(params);
         this.tableData = res.list;
         this.total = res.total;
       } finally {
         this.loading = false
+      }
+    },
+    async loadProducts() {
+      try {
+        const res = await this.$api.getProductList({ pageSize: 999 })
+        this.productList = res.list || res
+        const map = {}
+        ;(this.productList).forEach(p => { map[p.id] = p })
+        this.productMap = map
+      } catch {
+        this.productList = []
+        this.productMap = {}
       }
     },
     handleCurrentChange(currentPageNum) {
@@ -268,71 +306,94 @@ export default {
       this.queryParam = { ...QUERY_PARAM }
       this.getList()
     },
-    handleSelectionChange(rows) {
-      this.selectedIds = rows.map(r => r.id)
-    },
-    handleDelete(ids) {
-      if (!Array.isArray(ids)) ids = [ids.id]
-      if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个订单?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteOrder({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
-        })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
-    },
     handleDetail(row) {
       this.currentDetail = row
       this.detailVisible = true
     },
-    handleEdit(row) {
-      this.isVisible = true;
-      this.modalType = 1;
-      this.form = JSON.parse(JSON.stringify(row));
-      // 时间字段不在表单中展示
-      delete this.form.createdAt
-      delete this.form.updatedAt
-      delete this.form.payment_time
-      delete this.form.delivery_time
-      delete this.form.receive_time
-    },
-    handleAdd() {
-      this.form = createDefaultForm()
-      this.isVisible = true;
-      this.modalType = 0;
-    },
-    async submit() {
-      await this.$refs.form.validate()
-      const payload = { ...this.form }
-      delete payload.createdAt
-      delete payload.updatedAt
-      delete payload.payment_time
-      delete payload.delivery_time
-      delete payload.receive_time
-      if (this.modalType === 0) delete payload.id
-      await (this.modalType === 0 ? this.$api.createOrder(payload) : this.$api.updateOrder(payload))
-      this.getList()
-      this.handleClose()
-      this.$message({
-        type: 'success',
-        message: this.modalType === 0 ? '添加成功' : '编辑成功',
+    handleCancel(row) {
+      this.$confirm('确定取消该订单?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).then(() => {
+        this.$api.cancelOrder({ id: row.id }).then(() => {
+          this.$message({ type: 'success', message: '取消成功' })
+          this.getList()
+        })
+      }).catch(err => {
+        if (err === 'cancel') return
+        this.$message({ type: 'error', message: err })
       })
     },
-    handleClose() {
-      this.form = createDefaultForm()
-      this.$refs.form.clearValidate();
-      this.isVisible = false;
-
+    handleConfirm(row) {
+      this.$confirm('确定确认收货?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).then(() => {
+        this.$api.confirmOrder({ id: row.id }).then(() => {
+          this.$message({ type: 'success', message: '确认成功' })
+          this.getList()
+        })
+      }).catch(err => {
+        if (err === 'cancel') return
+        this.$message({ type: 'error', message: err })
+      })
+    },
+    // 新增订单
+    handleAdd() {
+      this.addForm = createDefaultAddForm()
+      this.addVisible = true
+    },
+    handleAddClose() {
+      this.addForm = createDefaultAddForm()
+      this.$refs.addForm?.clearValidate()
+      this.addVisible = false
+    },
+    addItem() {
+      this.addForm.items.push({ product_id: '', quantity: 1 })
+    },
+    removeItem(index) {
+      this.addForm.items.splice(index, 1)
+    },
+    handleProductChange(productId, index) {
+      const product = this.productMap[productId]
+      if (product) {
+        this.$set(this.addForm.items, index, { ...this.addForm.items[index], product_id: productId, product_name: product.name, price: product.price })
+      }
+    },
+    calcSubtotal(index) {
+      const item = this.addForm.items[index]
+      if (!item.product_id || !item.quantity) return '0.00'
+      const product = this.productMap[item.product_id]
+      return product ? (product.price * item.quantity).toFixed(2) : '0.00'
+    },
+    async submitAdd() {
+      await this.$refs.addForm.validate()
+      if (!this.addForm.items.length || !this.addForm.items.every(i => i.product_id)) {
+        this.$message({ type: 'warning', message: '请添加商品' })
+        return
+      }
+      this.addLoading = true
+      try {
+        const res = await this.$api.createOrder({
+          member_id: this.addForm.member_id,
+          consignee: this.addForm.consignee,
+          consignee_phone: this.addForm.consignee_phone,
+          shipping_address: this.addForm.shipping_address,
+          remark: this.addForm.remark || undefined,
+          items: this.addForm.items.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+        })
+        if (res) {
+          this.$message({ type: 'success', message: '订单创建成功' })
+          this.handleAddClose()
+          this.getList()
+        }
+      } catch (e) {
+        this.$message({ type: 'error', message: e || '创建失败' })
+      } finally {
+        this.addLoading = false
+      }
     },
     statusText(status) {
       const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' }
@@ -350,22 +411,44 @@ export default {
 .drawer-body {
   padding: 0 20px 20px;
 }
+.drawer-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 20px 0 10px;
+  padding-left: 4px;
+  border-left: 3px solid #409eff;
+}
+.drawer-descriptions {
+  margin-top: 20px;
+}
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.product-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .dialog-form {
   padding: 10px 20px 0;
 }
-.dialog-form .form-row {
+.form-row {
   display: flex;
   gap: 24px;
 }
-.dialog-form .form-row + .form-row {
+.form-row + .form-row {
   margin-top: 6px;
 }
-.dialog-form .form-row .el-form-item {
+.form-row .el-form-item {
   flex: 1;
 }
-.dialog-form .form-row .el-form-item :deep(.el-input),
-.dialog-form .form-row .el-form-item :deep(.el-select),
-.dialog-form .form-row .el-form-item :deep(.el-input-number) {
+.form-row .el-form-item :deep(.el-input),
+.form-row .el-form-item :deep(.el-select),
+.form-row .el-form-item :deep(.el-input-number) {
   width: 100%;
 }
 .text-ellipsis {
@@ -375,5 +458,27 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
+}
+.no-action {
+  color: #c0c4cc;
+}
+.order-items {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 12px;
+}
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.order-item:last-child {
+  margin-bottom: 0;
+}
+.item-subtotal {
+  min-width: 80px;
+  color: #409eff;
+  font-weight: 600;
 }
 </style>
