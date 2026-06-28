@@ -363,3 +363,26 @@ export const getLogisticsDetail = (order_id) => {
 export const signLogistics = (data) => {
   return http.post("/logistics/sign", data);
 };
+
+// 退货单管理
+export const getReturnList = (params) => {
+  return http.get("/logistics/return/list", { params });
+};
+export const getReturnDetail = (params) => {
+  return http.get("/logistics/return/detail", { params });
+};
+export const addReturn = (data) => {
+  return http.post("/logistics/return/add", data);
+};
+export const updateReturn = (data) => {
+  return http.post("/logistics/return/update", data);
+};
+export const signReturn = (data) => {
+  return http.post("/logistics/return/sign", data);
+};
+export const warehousingReturn = (data) => {
+  return http.post("/logistics/return/warehousing", data);
+};
+export const deleteReturn = (data) => {
+  return http.post("/logistics/return/delete", data);
+};
