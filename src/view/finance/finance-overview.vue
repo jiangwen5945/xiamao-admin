@@ -1,5 +1,14 @@
 <template>
   <div class="page" v-loading="loading">
+    <div class="time-range-bar">
+      <span class="time-range-label">时间范围：</span>
+      <el-radio-group :value="timeRange" size="mini" @change="handleTimeChange">
+        <el-radio-button :label="7">近 7 日</el-radio-button>
+        <el-radio-button :label="30">近 30 日</el-radio-button>
+        <el-radio-button :label="90">近 90 日</el-radio-button>
+      </el-radio-group>
+    </div>
+
     <div class="count-wrap">
       <div class="count-card" style="background: linear-gradient(135deg,#667eea,#764ba2)">
         <i class="el-icon-s-finance count-icon"></i>
@@ -22,10 +31,11 @@
           <p class="count-label">净收入</p>
         </div>
       </div>
+
     </div>
 
     <div class="card card-spacing">
-      <div class="card-header"><span>近 7 日财务趋势</span></div>
+      <div class="card-header"><span>{{ periodLabel }}财务趋势</span></div>
       <div ref="trendChart" style="height: 320px"></div>
     </div>
 
@@ -72,7 +82,15 @@ export default {
   data() {
     return {
       loading: false,
-      overview: { total_income: '0.00', total_refund: '0.00', total_net: '0.00', recent_trend: [] },
+      timeRange: 7,
+      periodLabel: '近 7 日',
+      overview: {
+        total_income: '0.00',
+        total_refund: '0.00',
+        total_net: '0.00',
+
+        recent_trend: [],
+      },
       recentRecords: [],
     }
   },
@@ -83,7 +101,7 @@ export default {
       this.loading = true
       try {
         const [overview, listRes] = await Promise.all([
-          this.$api.getFinanceOverview(),
+          this.$api.getFinanceOverview({ days: this.timeRange }),
           this.$api.getFinanceList({ page: 1, pageSize: 5 })
         ])
         this.overview = overview
@@ -92,6 +110,11 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    handleTimeChange(val) {
+      const labels = { 7: '近 7 日', 30: '近 30 日', 90: '近 90 日' }
+      this.periodLabel = labels[val] || '近 7 日'
+      this.loadData()
     },
     initChart() {
       const chart = echarts.init(this.$refs.trendChart)
@@ -107,9 +130,9 @@ export default {
         xAxis: { type: 'category', data: trend.map(r => dayjs(r.period_start).format('MM-DD')), boundaryGap: false },
         yAxis: { type: 'value', name: '金额（元）', min: 0 },
         series: [
-          { name: '实付金额', type: 'line', smooth: true, data: trend.map(r => parseFloat(r.actual_amount || 0)) },
-          { name: '退款金额', type: 'line', smooth: true, data: trend.map(r => parseFloat(r.refund_amount || 0)) },
-          { name: '净收入', type: 'line', smooth: true, data: trend.map(r => parseFloat(r.net_amount || 0)) },
+          { name: '实付金额', type: 'line', smooth: true, data: trend.map(r => parseFloat(r.actual_amount || 0)), lineStyle: { width: 2 }, areaStyle: { opacity: 0.1 } },
+          { name: '退款金额', type: 'line', smooth: true, data: trend.map(r => parseFloat(r.refund_amount || 0)), lineStyle: { width: 2 }, areaStyle: { opacity: 0.1 } },
+          { name: '净收入', type: 'line', smooth: true, data: trend.map(r => parseFloat(r.net_amount || 0)), lineStyle: { width: 2 }, areaStyle: { opacity: 0.1 } },
         ],
       })
     },
@@ -121,6 +144,19 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.time-range-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .time-range-label {
+    font-size: 14px;
+    color: #606266;
+    margin-right: 12px;
+    white-space: nowrap;
+  }
+}
+
 .count-wrap {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

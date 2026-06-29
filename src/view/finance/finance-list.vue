@@ -17,11 +17,12 @@
     <div class="table-header">
       <div class="left">
         <el-button type="primary" size="medium" @click="handleGenerate">生成对账</el-button>
+        <CommonExcel :tableData="tableData" filename="对账列表" />
       </div>
     </div>
 
     <div class="table-content">
-      <el-table :data="tableData" stripe>
+      <el-table :data="tableData" stripe ref="refTable">
         <el-table-column label="周期类型">
           <template #default="scope">{{ scope.row.period_type === 'daily' ? '日报' : '月报' }}</template>
         </el-table-column>
@@ -139,12 +140,13 @@
 import dayjs from 'dayjs'
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
+import CommonExcel from "@/components/CommonExcel.vue";
 
 const QUERY_PARAM = { page: 1, pageSize: 10, period_type: '', status: '' }
 
 export default {
   name: "FinanceList",
-  components: { FilterBar, FilterBarItem },
+  components: { FilterBar, FilterBarItem, CommonExcel },
   filters: {
     dateTime(val) {
       return val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '-'
@@ -253,14 +255,67 @@ export default {
         this.itemsLoading = false
       }
     },
-    handleExport(row) {
-      this.$confirm('确定导出该周期对账数据?', '提示', {
-        confirmButtonText: '确定', cancelButtonText: '取消', type: 'info',
-      }).then(() => {
-        this.$api.financeExport({ id: row.id }).catch(() => {
-          this.$message({ type: 'error', message: '导出失败' })
+    async handleExport(row) {
+      try {
+        await this.$confirm('确定导出该周期对账数据?', '提示', {
+          confirmButtonText: '确定', cancelButtonText: '取消', type: 'info',
         })
-      }).catch(() => {})
+      } catch (_) {
+        return // 用户取消
+      }
+
+      try {
+        const itemsRes = await this.$api.getFinanceDetailItems({ id: row.id, page: 1, pageSize: 99999 })
+
+        const XLSX = await import('xlsx')
+
+        const wb = XLSX.utils.book_new()
+
+        // Sheet 1: 对账汇总
+        const summaryData = [
+          ['项目', '数据'],
+          ['周期', `${row.period_start} ~ ${row.period_end}`],
+          ['周期类型', row.period_type === 'daily' ? '日报' : '月报'],
+          ['订单数', row.order_count],
+          ['商品总额', row.total_amount],
+          ['实付金额', row.actual_amount],
+          ['退款金额', row.refund_amount],
+          ['营销抵扣', row.marketing_discount],
+          ['净收入', row.net_amount],
+        ]
+        const ws1 = XLSX.utils.aoa_to_sheet(summaryData)
+        ws1['!cols'] = [{ wch: 14 }, { wch: 20 }]
+        XLSX.utils.book_append_sheet(wb, ws1, '对账汇总')
+
+        // Sheet 2: 订单明细
+        const detailHeader = ['订单号', '商品总额', '实付金额', '营销抵扣', '支付时间']
+        const detailData = (itemsRes.list || []).map(item => [
+          item.order_no,
+          parseFloat(item.total_amount || 0).toFixed(2),
+          parseFloat(item.actual_amount || 0).toFixed(2),
+          (parseFloat(item.total_amount || 0) - parseFloat(item.actual_amount || 0)).toFixed(2),
+          item.payment_time ? dayjs(item.payment_time).format('YYYY-MM-DD HH:mm:ss') : '-',
+        ])
+        const ws2 = XLSX.utils.aoa_to_sheet([detailHeader, ...detailData])
+        ws2['!cols'] = [
+          { wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 22 },
+        ]
+        XLSX.utils.book_append_sheet(wb, ws2, '订单明细')
+
+        // 导出文件
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+        const blob = new Blob([wbout], { type: 'application/octet-stream' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `对账_${row.period_start}_${row.period_end}.xlsx`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      } catch (e) {
+        this.$message({ type: 'error', message: e.message || '导出失败' })
+      }
     },
   },
 }
