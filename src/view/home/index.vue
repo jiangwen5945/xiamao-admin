@@ -307,6 +307,7 @@ export default {
     },
     // 折线图：近 7 日销售趋势（双 Y 轴）
     initLineChart(salesTrend) {
+      if (!this.$refs.echarts1) return
       const chart = echarts.init(this.$refs.echarts1);
       if (!salesTrend || !salesTrend.length) {
         chart.setOption({ title: { text: "暂无数据", left: "center", top: "center" } });
@@ -344,6 +345,7 @@ export default {
     },
     // 柱状图：热销商品 TOP10
     initBarChart(topProducts) {
+      if (!this.$refs.echarts2) return
       const chart = echarts.init(this.$refs.echarts2);
       if (!topProducts || !topProducts.length) {
         chart.setOption({ title: { text: "暂无数据", left: "center", top: "center" } });
@@ -378,6 +380,7 @@ export default {
     },
     // 饼图（环形图）：商品分类
     initPieChart(categorySales) {
+      if (!this.$refs.echarts3) return
       const chart = echarts.init(this.$refs.echarts3);
       if (!categorySales || !categorySales.length) {
         chart.setOption({ title: { text: "暂无数据", left: "center", top: "center" } });

@@ -2,6 +2,8 @@ import Axios from "axios"
 import {Message} from 'element-ui'
 import Cookie from 'js-cookie'
 
+let isRedirecting = false
+
 const http = new Axios.create({
   baseURL: '/api',
   timeout: 10000
@@ -23,18 +25,26 @@ http.interceptors.response.use(function (response) {
   if (response.status === 200) {
     const { code, data: result, message } = response.data
     if (code === 200) {
-      return result
+      return result || {}
     } else {
-      Message({
-        type: 'error',
-        message: message
-      });
+      Message({ type: 'error', message });
       console.error(message);
+      return result || {}
     }
   }
+  return {}
 }, function (error) {
-  // 响应错误时
-  return Promise.reject(error)
+  if (error.response && error.response.status === 401) {
+    if (!isRedirecting) {
+      isRedirecting = true
+      Cookie.remove('token')
+      Message({ type: 'warning', message: '登录已过期，请重新登录' })
+      window.location.href = '/#/login'
+    }
+    return {}
+  }
+  Message({ type: 'error', message: '网络异常，请稍后重试' })
+  return {}
 })
 
 export default http
