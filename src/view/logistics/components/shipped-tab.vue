@@ -261,7 +261,7 @@ export default {
       return map[val] || 'info'
     },
     orderStatusText(val) {
-      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' }
+      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消', 5: '已退款', 6: '售后中' }
       return map[val] || '未知'
     },
     orderStatusTagType(val) {

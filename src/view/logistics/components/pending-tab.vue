@@ -22,9 +22,10 @@
         <el-table-column label="创建时间">
           <template #default="scope">{{ scope.row.created_at | dateTime }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="mini" @click="handleShip(scope.row)">发货</el-button>
+            <el-button size="mini" @click="handleVirtualShip(scope.row)">虚拟发货</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -193,6 +194,21 @@ export default {
       this.currentOrderId = null
       this.shipForm = createShipForm()
       this.$refs.shipForm?.clearValidate()
+    },
+    handleVirtualShip(row) {
+      this.$confirm('虚拟商品无需物流配送，确认后直接标记为已完成?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      }).then(() => {
+        this.$api.virtualShip({ order_id: row.order_id }).then(() => {
+          this.$message({ type: 'success', message: '虚拟发货成功' })
+          this.getList()
+        })
+      }).catch(err => {
+        if (err === 'cancel') return
+        this.$message({ type: 'error', message: err })
+      })
     }
   }
 }

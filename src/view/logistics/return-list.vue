@@ -1,8 +1,12 @@
 <template>
   <div class="page" v-loading="loading">
-    <div class="page-header">
-      <el-button type="primary" @click="handleAdd">新增退货</el-button>
-    </div>
+    <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+      <el-tab-pane label="全部" name="all" />
+      <el-tab-pane label="待退货" name="0" />
+      <el-tab-pane label="退货中" name="1" />
+      <el-tab-pane label="已签收" name="2" />
+      <el-tab-pane label="已入库" name="3" />
+    </el-tabs>
 
     <FilterBar @query="handleQuery" @reset="handleReset">
       <FilterBarItem label="订单号">
@@ -10,6 +14,9 @@
       </FilterBarItem>
       <FilterBarItem label="运单号">
         <el-input v-model="queryParam.return_express_no" clearable @keyup.enter="handleQuery" />
+      </FilterBarItem>
+      <FilterBarItem label="售后单ID">
+        <el-input v-model="queryParam.after_sales_id" clearable @keyup.enter="handleQuery" />
       </FilterBarItem>
       <FilterBarItem label="退货时间">
         <el-date-picker
@@ -27,11 +34,16 @@
     <div class="table-content">
       <el-table :data="tableData" stripe @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="50" />
-        <el-table-column label="订单号" min-width="180">
+        <el-table-column label="订单号" min-width="160">
           <template #default="scope">
             <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">
               {{ scope.row.Order?.order_no || '-' }}
             </el-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="售后单ID" width="90">
+          <template #default="scope">
+            <el-tag size="mini">{{ scope.row.after_sales_id || '-' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="退货状态" width="90">
@@ -51,31 +63,30 @@
             {{ scope.row.return_express_no || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="退货原因" min-width="160">
+        <el-table-column label="退货原因" min-width="140">
           <template #default="scope">
             <el-tooltip :content="scope.row.return_reason || '-'" placement="top">
               <span class="text-ellipsis">{{ scope.row.return_reason || '-' }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="收货人" width="90">
+        <el-table-column label="收货人" width="80">
           <template #default="scope">{{ scope.row.Order?.consignee || '-' }}</template>
         </el-table-column>
-        <el-table-column label="实付金额" width="100">
+        <el-table-column label="实付金额" width="90">
           <template #default="scope">￥{{ scope.row.Order?.actual_amount || '0.00' }}</template>
         </el-table-column>
-        <el-table-column label="退货时间" width="170">
+        <el-table-column label="退货时间" width="160">
           <template #default="scope">{{ scope.row.returned_at | dateTime }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="scope">
-            <el-button type="text" size="mini" @click="handleDetail(scope.row)">详情</el-button>
             <el-button
               v-if="scope.row.status < 2"
               type="text"
               size="mini"
               @click="handleEdit(scope.row)"
-            >编辑</el-button>
+            >{{ scope.row.status === 0 ? '填写物流' : '编辑' }}</el-button>
             <el-button
               v-if="scope.row.status === 1"
               type="text"
@@ -109,23 +120,15 @@
       />
     </div>
 
-    <!-- 新增/编辑弹窗 -->
+    <!-- 编辑弹窗 -->
     <el-dialog
       :visible.sync="isVisible"
-      :title="modalType === 0 ? '新增退货' : '编辑退货'"
+      :title="dialogTitle"
       width="560px"
       :destroy-on-close="true"
       @close="handleClose"
     >
       <el-form ref="form" :model="form" :rules="formRules" label-width="100px">
-        <el-form-item label="关联订单" prop="order_id" v-if="modalType === 0">
-          <el-select v-model="form.order_id" filterable remote
-            :remote-method="searchOrders" :loading="orderSearchLoading"
-            placeholder="输入订单号搜索" style="width: 100%">
-            <el-option v-for="o in orderOptions" :key="o.id"
-              :label="`${o.order_no} - ${o.consignee}`" :value="o.id" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="物流公司" prop="express_company_id">
           <el-select v-model="form.express_company_id" placeholder="请选择" clearable style="width: 100%">
             <el-option v-for="item in expressCompanyList" :key="item.id"
@@ -220,12 +223,15 @@ const QUERY_PARAM = {
   pageSize: 10,
   order_no: '',
   return_express_no: '',
+  after_sales_id: '',
   returned_at_from: '',
   returned_at_to: '',
 }
 
+const TAB_STATUS_MAP = { all: '', '0': '0', '1': '1', '2': '2', '3': '3' }
+
 const createDefaultForm = () => ({
-  order_id: '',
+  id: '',
   express_company_id: '',
   return_express_no: '',
   return_reason: '',
@@ -245,26 +251,29 @@ export default {
       loading: false,
       tableData: [],
       total: 0,
+      activeTab: 'all',
       queryParam: { ...QUERY_PARAM },
       returnRange: null,
       selectedIds: [],
       isVisible: false,
-      modalType: 0,
       form: createDefaultForm(),
       formRules: {
         order_id: [{ required: true, message: '请选择关联订单', trigger: 'change' }],
       },
       submitLoading: false,
+      dialogTitle: '编辑退货',
       detailVisible: false,
       currentDetail: {},
       expressCompanyList: [],
-      // 订单搜索
-      orderOptions: [],
-      orderSearchLoading: false,
     }
   },
   created() {
     this.loadExpressCompany()
+    // 从售后列表跳转过来时，接收 after_sales_id 参数
+    const afterSalesId = this.$route.query.after_sales_id
+    if (afterSalesId) {
+      this.queryParam.after_sales_id = afterSalesId
+    }
     this.getList()
   },
   activated() {
@@ -296,17 +305,10 @@ export default {
         this.expressCompanyList = []
       }
     },
-    async searchOrders(query) {
-      if (!query) { this.orderOptions = []; return }
-      this.orderSearchLoading = true
-      try {
-        const res = await this.$api.getAdminOrderList({ order_no: query, pageSize: 20 })
-        this.orderOptions = res.list || []
-      } catch {
-        this.orderOptions = []
-      } finally {
-        this.orderSearchLoading = false
-      }
+    handleTabClick() {
+      this.queryParam.status = TAB_STATUS_MAP[this.activeTab]
+      this.queryParam.page = 1
+      this.getList()
     },
     handleCurrentChange(page) {
       this.queryParam.page = page
@@ -324,6 +326,11 @@ export default {
     handleReset() {
       this.queryParam = { ...QUERY_PARAM }
       this.returnRange = null
+      this.activeTab = this.$route.query.after_sales_id ? 'all' : 'all'
+      const afterSalesId = this.$route.query.after_sales_id
+      if (afterSalesId) {
+        this.queryParam.after_sales_id = afterSalesId
+      }
       this.getList()
     },
     handleSelectionChange(rows) {
@@ -338,21 +345,15 @@ export default {
         this.queryParam.returned_at_to = ''
       }
     },
-    handleAdd() {
-      this.modalType = 0
-      this.form = createDefaultForm()
-      this.isVisible = true
-    },
     handleEdit(row) {
-      this.modalType = 1
       this.form = {
         id: row.id,
-        order_id: row.order_id,
         express_company_id: row.express_company_id,
         return_express_no: row.return_express_no,
         return_reason: row.return_reason,
         remark: row.remark,
       }
+      this.dialogTitle = row.status === 0 ? '填写物流信息' : '编辑退货'
       this.isVisible = true
     },
     handleDetail(row) {
@@ -400,13 +401,8 @@ export default {
       if (!valid) return
       this.submitLoading = true
       try {
-        if (this.modalType === 0) {
-          await this.$api.addReturn(this.form)
-          this.$message.success('新增成功')
-        } else {
-          await this.$api.updateReturn(this.form)
-          this.$message.success('更新成功')
-        }
+        await this.$api.updateReturn(this.form)
+        this.$message.success('更新成功')
         this.isVisible = false
         this.getList()
       } catch (e) {
@@ -428,7 +424,7 @@ export default {
       return map[val] || 'info'
     },
     orderStatusText(val) {
-      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' }
+      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消', 5: '已退款', 6: '售后中' }
       return map[val] || '未知'
     },
     orderStatusTagType(val) {
@@ -440,9 +436,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.page-header {
-  margin-bottom: 16px;
-}
 .drawer-body {
   padding: 0 20px 20px;
 }
