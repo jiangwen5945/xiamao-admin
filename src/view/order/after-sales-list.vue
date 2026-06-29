@@ -14,7 +14,6 @@
       <FilterBarItem label="类型">
         <el-select v-model="queryParam.type" placeholder="全部" clearable>
           <el-option label="退货退款" :value="1" />
-          <el-option label="换货" :value="2" />
           <el-option label="仅退款" :value="3" />
         </el-select>
       </FilterBarItem>
@@ -59,7 +58,7 @@
         <el-table-column label="申请时间">
           <template #default="scope">{{ scope.row.createdAt | dateTime }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button
               v-if="scope.row.status === 0"
@@ -67,7 +66,19 @@
               size="mini"
               @click="handleReview(scope.row)"
             >审核</el-button>
+            <el-button
+              v-else-if="scope.row.status === 1"
+              type="success"
+              size="mini"
+              @click="handleComplete(scope.row)"
+            >完成操作</el-button>
             <span v-else class="no-action">-</span>
+            <el-button
+              v-if="scope.row.type === 1 && scope.row.status >= 1"
+              type="text"
+              size="mini"
+              @click="handleToReturn(scope.row)"
+            >退货物流</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -292,6 +303,21 @@ export default {
       this.reviewVisible = false
       this.$refs.reviewForm?.clearValidate()
     },
+    async handleComplete(row) {
+      this.$confirm('确认完成该售后单?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      }).then(() => {
+        this.$api.completeAfterSales({ id: row.id }).then(() => {
+          this.$message({ type: 'success', message: '操作成功' })
+          this.getList()
+        })
+      }).catch(err => {
+        if (err === 'cancel') return
+        this.$message({ type: 'error', message: err })
+      })
+    },
     typeText(val) {
       const map = { 1: '退货退款', 2: '换货', 3: '仅退款' }
       return map[val] || '未知'
@@ -308,8 +334,11 @@ export default {
       const map = { 0: 'warning', 1: 'success', 2: 'primary', 3: 'danger' }
       return map[val] || 'info'
     },
+    handleToReturn(row) {
+      this.$router.push({ path: '/logistics/return', query: { after_sales_id: row.id } })
+    },
     orderStatusText(val) {
-      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' }
+      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消', 5: '已退款', 6: '售后中' }
       return map[val] || '未知'
     },
   },

@@ -13,10 +13,34 @@
           <el-option label="待收货" :value="2" />
           <el-option label="已完成" :value="3" />
           <el-option label="已取消" :value="4" />
+          <el-option label="已退款" :value="5" />
+          <el-option label="售后中" :value="6" />
         </el-select>
       </FilterBarItem>
       <FilterBarItem label="收货人">
         <el-input v-model="queryParam.consignee" placeholder="" clearable @keyup.enter="handleQuery" />
+      </FilterBarItem>
+      <FilterBarItem label="创建时间">
+        <el-date-picker
+          v-model="createDateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="yyyy-MM-dd"
+          @change="handleCreateDateChange"
+        />
+      </FilterBarItem>
+      <FilterBarItem label="支付时间">
+        <el-date-picker
+          v-model="paymentDateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="yyyy-MM-dd"
+          @change="handlePaymentDateChange"
+        />
       </FilterBarItem>
     </FilterBar>
 
@@ -24,12 +48,13 @@
     <div class="table-header">
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增订单</el-button>
+        <CommonExcel :tableData="tableData" filename="订单列表" />
       </div>
     </div>
 
     <!-- 数据表格 -->
     <div class="table-content">
-      <el-table :data="tableData" stripe>
+      <el-table :data="tableData" stripe ref="refTable">
         <el-table-column label="订单号" min-width="180">
           <template #default="scope">
             <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">{{ scope.row.order_no }}</el-link>
@@ -54,6 +79,11 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
+        <el-table-column label="支付时间" width="170">
+          <template #default="scope">
+            {{ scope.row.payment_time | dateTime }}
+          </template>
+        </el-table-column>
         <el-table-column prop="consignee" label="收货人" width="90" />
         <el-table-column prop="consignee_phone" label="收货电话" width="120" />
         <el-table-column prop="shipping_address" label="收货地址" min-width="200">
@@ -72,16 +102,28 @@
           <template #default="scope">
             <el-button
               v-if="scope.row.status === 0"
+              type="primary"
+              size="mini"
+              @click="handlePay(scope.row)"
+            >支付</el-button>
+            <el-button
+              v-if="scope.row.status === 0"
               size="mini"
               @click="handleCancel(scope.row)"
             >取消</el-button>
             <el-button
-              v-if="scope.row.status === 2"
+              v-if="scope.row.status === 1"
               type="primary"
               size="mini"
-              @click="handleConfirm(scope.row)"
-            >确认收货</el-button>
-            <span v-if="![0, 2].includes(scope.row.status)" class="no-action">-</span>
+              @click="handleGoDelivery(scope.row)"
+            >去发货</el-button>
+            <el-button
+              v-if="scope.row.status === 3"
+              type="warning"
+              size="mini"
+              @click="handleAfterSales(scope.row)"
+            >售后</el-button>
+            <span v-if="![0, 1, 3].includes(scope.row.status)" class="no-action">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -211,15 +253,45 @@
         </el-descriptions>
       </div>
     </el-drawer>
+
+    <!-- 发起售后弹窗 -->
+    <el-dialog
+      title="发起售后"
+      :visible="afterSalesVisible"
+      :before-close="handleAfterSalesClose"
+      center
+      :destroy-on-close="true"
+      width="500px"
+    >
+      <el-form ref="afterSalesForm" :model="afterSalesForm" label-width="100px">
+        <el-form-item label="售后类型" required>
+          <el-radio-group v-model="afterSalesForm.type">
+            <el-radio :label="1">退货退款</el-radio>
+            <el-radio :label="3">仅退款</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="退款金额" prop="refund_amount">
+          <el-input-number v-model="afterSalesForm.refund_amount" :precision="2" :min="0" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="售后原因">
+          <el-input v-model="afterSalesForm.reason" type="textarea" :rows="3" placeholder="请填写售后原因" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="handleAfterSalesClose">取 消</el-button>
+        <el-button type="primary" @click="submitAfterSales" :loading="afterSalesLoading">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
+import CommonExcel from "@/components/CommonExcel";
 import dayjs from 'dayjs'
 
-const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '', status: '', consignee: '' }
+const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '', status: '', consignee: '', created_at_from: '', created_at_to: '', payment_time_from: '', payment_time_to: '' }
 const createDefaultAddForm = () => ({
   member_id: 1,
   consignee: '',
@@ -231,7 +303,7 @@ const createDefaultAddForm = () => ({
 
 export default {
   name: "OrderList",
-  components: { FilterBar, FilterBarItem },
+  components: { FilterBar, FilterBarItem, CommonExcel },
   filters: {
     dateTime(val) {
       return val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '-'
@@ -256,6 +328,12 @@ export default {
       productMap: {},
       detailVisible: false,
       currentDetail: {},
+      afterSalesVisible: false,
+      afterSalesForm: { type: 1, reason: '', refund_amount: 0 },
+      afterSalesOrderId: null,
+      afterSalesLoading: false,
+      createDateRange: null,
+      paymentDateRange: null,
     };
   },
 
@@ -304,11 +382,46 @@ export default {
     },
     handleReset() {
       this.queryParam = { ...QUERY_PARAM }
+      this.createDateRange = null
+      this.paymentDateRange = null
       this.getList()
+    },
+    handleCreateDateChange(val) {
+      if (val) {
+        this.queryParam.created_at_from = val[0]
+        this.queryParam.created_at_to = val[1]
+      } else {
+        this.queryParam.created_at_from = ''
+        this.queryParam.created_at_to = ''
+      }
+    },
+    handlePaymentDateChange(val) {
+      if (val) {
+        this.queryParam.payment_time_from = val[0]
+        this.queryParam.payment_time_to = val[1]
+      } else {
+        this.queryParam.payment_time_from = ''
+        this.queryParam.payment_time_to = ''
+      }
     },
     handleDetail(row) {
       this.currentDetail = row
       this.detailVisible = true
+    },
+    handlePay(row) {
+      this.$confirm('确认将该订单标记为已支付?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      }).then(() => {
+        this.$api.payOrder({ id: row.id }).then(() => {
+          this.$message({ type: 'success', message: '支付成功' })
+          this.getList()
+        })
+      }).catch(err => {
+        if (err === 'cancel') return
+        this.$message({ type: 'error', message: err })
+      })
     },
     handleCancel(row) {
       this.$confirm('确定取消该订单?', '提示', {
@@ -318,21 +431,6 @@ export default {
       }).then(() => {
         this.$api.cancelOrder({ id: row.id }).then(() => {
           this.$message({ type: 'success', message: '取消成功' })
-          this.getList()
-        })
-      }).catch(err => {
-        if (err === 'cancel') return
-        this.$message({ type: 'error', message: err })
-      })
-    },
-    handleConfirm(row) {
-      this.$confirm('确定确认收货?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }).then(() => {
-        this.$api.confirmOrder({ id: row.id }).then(() => {
-          this.$message({ type: 'success', message: '确认成功' })
           this.getList()
         })
       }).catch(err => {
@@ -395,12 +493,41 @@ export default {
         this.addLoading = false
       }
     },
+    // 售后
+    handleAfterSales(row) {
+      this.afterSalesOrderId = row.id
+      this.afterSalesForm = { type: 1, reason: '', refund_amount: Number(row.actual_amount) || 0 }
+      this.afterSalesVisible = true
+    },
+    // 去发货
+    handleGoDelivery() {
+      this.$router.push('/logistics/delivery')
+    },
+    async submitAfterSales() {
+      this.afterSalesLoading = true
+      try {
+        await this.$api.adminApplyAfterSales({
+          order_id: this.afterSalesOrderId,
+          type: this.afterSalesForm.type,
+          reason: this.afterSalesForm.reason || undefined,
+          refund_amount: this.afterSalesForm.refund_amount,
+        })
+        this.$message({ type: 'success', message: '售后单创建成功' })
+        this.afterSalesVisible = false
+        this.getList()
+      } finally {
+        this.afterSalesLoading = false
+      }
+    },
+    handleAfterSalesClose() {
+      this.afterSalesVisible = false
+    },
     statusText(status) {
-      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' }
+      const map = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消', 5: '已退款', 6: '售后中' }
       return map[status] || '未知'
     },
     statusTagType(status) {
-      const map = { 0: 'warning', 1: 'primary', 2: '', 3: 'success', 4: 'danger' }
+      const map = { 0: 'warning', 1: 'primary', 2: '', 3: 'success', 4: 'danger', 5: 'danger', 6: 'warning' }
       return map[status] || 'info'
     },
   },
