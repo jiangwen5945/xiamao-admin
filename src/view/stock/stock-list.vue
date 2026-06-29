@@ -39,9 +39,16 @@
       </FilterBarItem>
     </FilterBar>
 
+    <!-- 导出按钮 -->
+    <div class="table-header">
+      <div class="left">
+        <CommonExcel :table-data="tableData" filename="库存列表" />
+      </div>
+    </div>
+
     <!-- 库存列表表格 -->
     <div class="table-content">
-      <el-table :data="tableData" stripe @sort-change="handleSortChange">
+      <el-table :data="tableData" stripe ref="refTable" @sort-change="handleSortChange">
         <!-- 商品名称（点击查看详情） -->
         <el-table-column label="商品名称"  width="180">
           <template #default="scope">
@@ -286,6 +293,7 @@
 <script>
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
+import CommonExcel from "@/components/CommonExcel.vue";
 
 /** 默认查询参数 */
 const QUERY_PARAM = {
@@ -298,7 +306,7 @@ const QUERY_PARAM = {
 
 export default {
   name: "StockList",
-  components: { FilterBar, FilterBarItem },
+  components: { FilterBar, FilterBarItem, CommonExcel },
   data() {
     return {
       tableData: [],            // 库存列表数据

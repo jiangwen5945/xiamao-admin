@@ -38,11 +38,32 @@
           @change="handleQuery"
         />
       </FilterBarItem>
+      <FilterBarItem label="操作结果">
+        <el-select v-model="queryParam.result" placeholder="全部" clearable @change="handleQuery">
+          <el-option label="全部" value="" />
+          <el-option label="成功" value="success" />
+          <el-option label="失败" value="fail" />
+        </el-select>
+      </FilterBarItem>
+      <FilterBarItem label="请求方法">
+        <el-select v-model="queryParam.method" placeholder="全部" clearable @change="handleQuery">
+          <el-option label="全部" value="" />
+          <el-option label="GET" value="GET" />
+          <el-option label="POST" value="POST" />
+          <el-option label="PUT" value="PUT" />
+          <el-option label="DELETE" value="DELETE" />
+        </el-select>
+      </FilterBarItem>
     </FilterBar>
 
     <!-- 操作栏 -->
     <div class="table-header">
       <div class="left">
+        <CommonExcel
+          :tableData="tableData"
+          :loading.sync="loading"
+          filename="操作日志"
+        ></CommonExcel>
         <el-button
           type="danger"
           size="medium"
@@ -57,6 +78,7 @@
       <el-table
         :data="tableData"
         stripe
+        ref="refTable"
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="45" />
@@ -140,6 +162,7 @@
 <script>
 import FilterBar from "@/components/filter/FilterBar.vue";
 import FilterBarItem from "@/components/filter/FilterBarItem";
+import CommonExcel from "@/components/CommonExcel.vue";
 import dayjs from "dayjs";
 
 const QUERY_PARAM = {
@@ -149,11 +172,13 @@ const QUERY_PARAM = {
   module: "",
   action: "",
   dateRange: "",
+  result: "",
+  method: "",
 };
 
 export default {
   name: "OperationLog",
-  components: { FilterBar, FilterBarItem },
+  components: { FilterBar, FilterBarItem, CommonExcel },
   filters: {
     dateTime(val) {
       return dayjs(val).format("YYYY-MM-DD HH:mm:ss");
@@ -167,6 +192,7 @@ export default {
       selectedIds: [],
       detailVisible: false,
       currentDetail: {},
+      loading: false,
     };
   },
 

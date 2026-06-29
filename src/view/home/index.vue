@@ -221,6 +221,8 @@ export default {
         { label: "已发货", type: "" },
         { label: "已完成", type: "success" },
         { label: "已取消", type: "danger" },
+        { label: "已退款", type: "danger" },
+      { label: "售后中", type: "warning" },
       ],
     };
   },

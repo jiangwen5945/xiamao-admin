@@ -46,11 +46,12 @@
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
         <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleDelete(selectedIds)">批量删除</el-button>
+        <CommonExcel :table-data="tableData" :loading.sync="loading" filename="商品列表" />
       </div>
     </div>
 
     <div class="table-content">
-      <el-table :data="tableData" stripe @selection-change="handleSelectionChange" @sort-change="handleSortChange">
+      <el-table :data="tableData" stripe ref="refTable" @selection-change="handleSelectionChange" @sort-change="handleSortChange">
         <el-table-column type="selection" width="45" />
         <el-table-column prop="name" label="商品名称" min-width="150">
           <template #default="scope">
@@ -276,6 +277,7 @@
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 import { quillEditor } from "vue-quill-editor";
+import CommonExcel from "@/components/CommonExcel.vue";
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
@@ -332,7 +334,7 @@ const EDITOR_OPTION = {
 
 export default {
   name: "GoodsList",
-  components: { FilterBar, FilterBarItem, quillEditor },
+  components: { FilterBar, FilterBarItem, quillEditor, CommonExcel },
   data() {
     return {
       tableData: [],
@@ -341,6 +343,7 @@ export default {
       modalType: 0,
       form: createDefaultForm(),
       queryParam: { ...QUERY_PARAM },
+      loading: false,
       formRules: {
         name: [{ required: true, message: "商品名称不能为空", trigger: "blur" }],
         price: [{ required: true, message: "商品价格不能为空", trigger: "blur" }],
