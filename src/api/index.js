@@ -1,5 +1,4 @@
 import http from "../utils/request";
-import Cookie from 'js-cookie';
 
 // 登录
 export const login = (data) => {
@@ -110,6 +109,10 @@ export const confirmOrder = (data) => {
   return http.post("/order/confirm", data);
 };
 
+export const payOrder = (data) => {
+  return http.post("/order/pay", data);
+};
+
 // 商品
 export const getProductList = (params) => {
   return http.get("/product/list", { params });
@@ -162,6 +165,23 @@ export const getStockMovements = (params) => {
 };
 export const getStockStats = () => {
   return http.get("/stock/stats");
+};
+
+// 商品评价
+export const getReviewList = (params) => {
+  return http.get("/product/review/list", { params });
+};
+export const getReviewDetail = (params) => {
+  return http.get("/product/review/detail", { params });
+};
+export const replyReview = (data) => {
+  return http.post("/product/review/reply", data);
+};
+export const updateReviewStatus = (data) => {
+  return http.post("/product/review/status", data);
+};
+export const deleteReview = (data) => {
+  return http.post("/product/review/delete", data);
 };
 
 // 图片文件上传
@@ -217,7 +237,6 @@ export const sendSiteMessage = (data) => {
 export const markSiteMessageRead = (data) => {
   return http.post("/notification/message/mark-read", data);
 };
-
 // 操作日志
 export const getLogList = (params) => {
   return http.get("/log/list", { params });
@@ -243,6 +262,12 @@ export const approveAfterSales = (data) => {
 };
 export const rejectAfterSales = (data) => {
   return http.post("/after-sales/admin/reject", data);
+};
+export const completeAfterSales = (data) => {
+  return http.post("/after-sales/admin/complete", data);
+};
+export const adminApplyAfterSales = (data) => {
+  return http.post("/after-sales/admin/apply", data);
 };
 
 // 营销活动 - 优惠券
@@ -304,27 +329,25 @@ export const getFinanceDetail = (params) => {
 export const getFinanceDetailItems = (params) => {
   return http.get("/finance/detail-items", { params });
 };
-export const getFinanceOverview = () => {
-  return http.get("/finance/overview");
-};
-export const financeExport = (params) => {
-  const token = Cookie.get('token')
-  const query = new URLSearchParams(params).toString()
-  return fetch(`/api/finance/export?${query}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }).then(res => res.blob()).then(blob => {
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `finance_${params.id}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  })
+export const getFinanceOverview = (params) => {
+  return http.get("/finance/overview", { params });
 };
 export const financeGenerate = (data) => {
   return http.post("/finance/generate", data);
+};
+
+// 会员地址
+export const getAddressList = (params) => {
+  return http.get("/address/list", { params });
+};
+export const addAddress = (data) => {
+  return http.post("/address/add", data);
+};
+export const updateAddress = (data) => {
+  return http.post("/address/update", data);
+};
+export const deleteAddress = (data) => {
+  return http.post("/address/delete", data);
 };
 
 // 系统字典
@@ -347,6 +370,57 @@ export const deleteDictItem = (id) => {
   return http.delete(`/dict/item/${id}`);
 };
 
+// 系统配置
+export const getSystemConfigs = () => {
+  return http.get("/system-config/list");
+};
+export const updateSystemConfigs = (data) => {
+  return http.post("/system-config/update", data);
+};
+
+// 内容管理 - Banner
+export const getBannerList = (params) => {
+  return http.get("/content/banner/list", { params });
+};
+export const getBannerDetail = (params) => {
+  return http.get("/content/banner/detail", { params });
+};
+export const addBanner = (data) => {
+  return http.post("/content/banner/add", data);
+};
+export const updateBanner = (data) => {
+  return http.post("/content/banner/update", data);
+};
+export const updateBannerStatus = (data) => {
+  return http.post("/content/banner/status", data);
+};
+export const deleteBanner = (data) => {
+  return http.post("/content/banner/delete", data);
+};
+
+// 内容管理 - 公告
+export const getArticleList = (params) => {
+  return http.get("/content/article/list", { params });
+};
+export const getArticleDetail = (params) => {
+  return http.get("/content/article/detail", { params });
+};
+export const addArticle = (data) => {
+  return http.post("/content/article/add", data);
+};
+export const updateArticle = (data) => {
+  return http.post("/content/article/update", data);
+};
+export const updateArticleStatus = (data) => {
+  return http.post("/content/article/status", data);
+};
+export const toggleArticleTop = (data) => {
+  return http.post("/content/article/toggle-top", data);
+};
+export const deleteArticle = (data) => {
+  return http.post("/content/article/delete", data);
+};
+
 // 物流管理
 export const shipOrder = (data) => {
   return http.post("/logistics/ship", data);
@@ -362,6 +436,9 @@ export const getLogisticsDetail = (order_id) => {
 };
 export const signLogistics = (data) => {
   return http.post("/logistics/sign", data);
+};
+export const virtualShip = (data) => {
+  return http.post("/logistics/virtual-ship", data);
 };
 
 // 退货单管理

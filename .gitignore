@@ -1,3 +1,9 @@
+# 忽略所有 . 开头的文件和目录
+.*
+
+# 但以下文件需要保留跟踪
+!.gitignore
+
 .DS_Store
 node_modules
 /dist
