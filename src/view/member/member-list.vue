@@ -39,12 +39,14 @@
           @click="handleDelete(selectedIds)"
           >删除选中</el-button
         >
+        <CommonExcel :table-data="tableData" filename="会员列表" />
       </div>
     </div>
 
     <!-- 数据表格 -->
     <div class="table-content">
       <el-table
+        ref="refTable"
         :data="tableData"
         stripe
         @selection-change="handleSelectionChange"
@@ -192,7 +194,7 @@
     <el-drawer
       :visible.sync="detailVisible"
       title="会员详情"
-      size="520px"
+      size="600px"
       :destroy-on-close="true"
     >
       <div class="drawer-body" v-if="currentDetail.id">
@@ -215,7 +217,6 @@
           <el-descriptions-item label="手机号">{{
             currentDetail.phone
           }}</el-descriptions-item>
-          <!--            -->
           <el-descriptions-item label="等级">
             <span
               class="level-badge"
@@ -239,14 +240,75 @@
             currentDetail.updatedAt | dateTime
           }}</el-descriptions-item>
         </el-descriptions>
+
+        <!-- 收货地址 -->
+        <div class="address-section">
+          <div class="section-header">
+            <span class="section-title">收货地址</span>
+            <el-button size="mini" type="primary" @click="handleAddressAdd">新增地址</el-button>
+          </div>
+          <el-table :data="addressList" stripe size="small" v-loading="addressLoading">
+            <el-table-column label="收货人" prop="name" width="80" />
+            <el-table-column label="电话" prop="phone" width="120" />
+            <el-table-column label="地址" min-width="160">
+              <template #default="scope">
+                {{ [scope.row.province, scope.row.city, scope.row.district, scope.row.detail].filter(Boolean).join(' ') }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作"             width="100" fixed="right">
+              <template #default="scope">
+                <el-button type="text" size="mini" @click="handleAddressEdit(scope.row)">编辑</el-button>
+                <el-button type="text" size="mini" style="color:#f56c6c" @click="handleAddressDelete(scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div v-if="!addressList.length && !addressLoading" class="address-empty">
+            暂无收货地址
+          </div>
+        </div>
       </div>
     </el-drawer>
+
+    <!-- 地址新增/编辑弹窗 -->
+    <el-dialog
+      :title="addressModalType ? '编辑地址' : '新增地址'"
+      :visible="addressVisible"
+      :before-close="handleAddressClose"
+      width="480px"
+      :destroy-on-close="true"
+    >
+      <el-form ref="addressForm" :model="addressForm" :rules="addressRules" label-width="80px">
+        <el-form-item label="收货人" prop="name">
+          <el-input v-model="addressForm.name" placeholder="请输入收货人" />
+        </el-form-item>
+        <el-form-item label="电话" prop="phone">
+          <el-input v-model="addressForm.phone" placeholder="请输入电话" maxlength="11" />
+        </el-form-item>
+        <el-form-item label="省份" prop="province">
+          <el-input v-model="addressForm.province" placeholder="请输入省份" />
+        </el-form-item>
+        <el-form-item label="城市" prop="city">
+          <el-input v-model="addressForm.city" placeholder="请输入城市" />
+        </el-form-item>
+        <el-form-item label="区县" prop="district">
+          <el-input v-model="addressForm.district" placeholder="请输入区县" />
+        </el-form-item>
+        <el-form-item label="详细地址" prop="detail">
+          <el-input v-model="addressForm.detail" placeholder="请输入街道/门牌号" type="textarea" :rows="2" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="handleAddressClose">取 消</el-button>
+        <el-button type="primary" @click="submitAddress">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import FilterBar from "@/components/filter/FilterBar.vue";
 import FilterBarItem from "@/components/filter/FilterBarItem";
+import CommonExcel from "@/components/CommonExcel.vue";
 import dayjs from "dayjs";
 
 const QUERY_PARAM = {
@@ -264,10 +326,20 @@ const createDefaultForm = () => ({
   level: 1,
   status: 1,
 });
+const createDefaultAddressForm = () => ({
+  id: "",
+  member_id: "",
+  name: "",
+  phone: "",
+  province: "",
+  city: "",
+  district: "",
+  detail: "",
+});
 
 export default {
   name: "MemberList",
-  components: { FilterBar, FilterBarItem },
+  components: { FilterBar, FilterBarItem, CommonExcel },
   filters: {
     dateTime(val) {
       return dayjs(val).format("YYYY-MM-DD HH:mm");
@@ -304,6 +376,19 @@ export default {
       selectedIds: [],
       detailVisible: false,
       currentDetail: {},
+      // 地址管理
+      addressList: [],
+      addressLoading: false,
+      addressVisible: false,
+      addressModalType: 0,
+      addressForm: createDefaultAddressForm(),
+      addressRules: {
+        name: [{ required: true, message: '收货人不能为空', trigger: 'blur' }],
+        phone: [
+          { required: true, message: '电话不能为空', trigger: 'blur' },
+          { pattern: /^1\d{10}$/, message: '手机号格式不正确', trigger: 'blur' },
+        ],
+      },
     };
   },
 
@@ -372,6 +457,68 @@ export default {
     handleDetail(row) {
       this.currentDetail = row;
       this.detailVisible = true;
+      this.loadAddressList(row.id);
+    },
+    // 加载地址列表
+    async loadAddressList(memberId) {
+      this.addressLoading = true;
+      try {
+        const res = await this.$api.getAddressList({ member_id: memberId });
+        this.addressList = res.list || [];
+      } catch {
+        this.addressList = [];
+      } finally {
+        this.addressLoading = false;
+      }
+    },
+    // 新增地址
+    handleAddressAdd() {
+      this.addressForm = createDefaultAddressForm();
+      this.addressForm.member_id = this.currentDetail.id;
+      this.addressModalType = 0;
+      this.addressVisible = true;
+    },
+    // 编辑地址
+    handleAddressEdit(row) {
+      this.addressForm = JSON.parse(JSON.stringify(row));
+      this.addressModalType = 1;
+      this.addressVisible = true;
+    },
+    // 删除地址
+    handleAddressDelete(row) {
+      this.$confirm('确定删除该地址?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      })
+        .then(() => {
+          this.$api.deleteAddress({ id: row.id }).then(() => {
+            this.$message({ type: 'success', message: '删除成功' });
+            this.loadAddressList(this.currentDetail.id);
+          });
+        })
+        .catch(() => {});
+    },
+    // 提交地址表单
+    async submitAddress() {
+      await this.$refs.addressForm.validate();
+      const payload = { ...this.addressForm };
+      delete payload.createdAt;
+      delete payload.updatedAt;
+      if (this.addressModalType === 0) {
+        delete payload.id;
+        await this.$api.addAddress(payload);
+      } else {
+        await this.$api.updateAddress(payload);
+      }
+      this.$message({ type: 'success', message: '保存成功' });
+      this.handleAddressClose();
+      this.loadAddressList(this.currentDetail.id);
+    },
+    // 关闭地址弹窗
+    handleAddressClose() {
+      this.addressForm = createDefaultAddressForm();
+      this.addressVisible = false;
     },
     // 编辑
     handleEdit(row) {
@@ -443,6 +590,26 @@ export default {
   font-size: 12px;
   font-weight: 500;
   line-height: 20px;
+}
+.address-section {
+  margin-top: 24px;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+.address-empty {
+  text-align: center;
+  color: #909399;
+  padding: 20px 0;
+  font-size: 13px;
 }
 .avatar-uploader {
   width: 70px;
