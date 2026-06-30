@@ -146,7 +146,7 @@
         </el-descriptions>
 
         <h4 class="detail-section-title">正文内容</h4>
-        <div class="detail-content" v-html="currentDetail.content || '暂无内容'" />
+        <div class="detail-content" v-html="$sanitize(currentDetail.content) || '暂无内容'" />
       </div>
     </el-drawer>
   </div>

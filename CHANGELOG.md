@@ -30,6 +30,31 @@
   - 处理状态切换（toggleStatus/toggleTop）、发送消息、表单提交等操作的未保护 await 调用
 
 ### refactor
+- 移除 `src/api/index.js` 中 10 个未使用的 API 定义
+- 合并重复 API：`getNotifications`/`readNotification` → `getSiteMessageList`/`markSiteMessageRead`；`detail` → `getUserDetail`
+- 清理 5 处 `console.log` 调试输出（LockScreen, product-list, role/index, user/index）
+
+### fix
+- 后端安全加固：
+  - JWT secret 从硬编码移至 `process.env.JWT_SECRET`
+  - `middleware/auth.js` 鉴权中间件覆盖 11 个路由文件（user, product, category, review, department, address, banner, article, stock, system-config, after-sales）
+  - 用户/菜单控制器防批量赋值：显式白名单 `ALLOWED_FIELDS`
+- 后端基础设施加固：
+  - 添加 `@koa/cors` CORS 支持（`ALLOWED_ORIGIN` 环境变量可配置）
+  - 添加 `koa-helmet` 安全头
+  - 添加 `koa-ratelimit` 限流（全局限流 60s 内 20 次）
+  - `controller/upload.js` 上传文件 MIME 类型校验（仅允许 jpg/png/gif/webp）
+  - `views/error.pug` 生产环境隐藏堆栈信息
+  - `app.js` koa-onerror 生产环境返回 JSON
+  - MySQL 连接配置移至环境变量（`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`）
+  - Pug 从 `^2.0.3` 升级至 `^3.0.3` 修复安全漏洞
+- 前端安全加固：
+  - 安装 `dompurify`，注册 `Vue.prototype.$sanitize` 全局方法
+  - `product-list.vue`/`article-list.vue` v-html 渲染经过 DOMPurify 消毒
+  - 用户新建默认密码从固定 `123456` 改为随机生成
+  - `vue.config.js` 添加 CSP 策略（default-src 'self'，阻止 XSS 注入）
+
+### refactor
 - API 定义瘦身：移除 10 个从未调用的死代码 API（`getData`、`signLogistics`、`addReturn`、`getReturnDetail`、`getLogisticsDetail`、`getCouponDetail`、`getBannerDetail`、`getLogDetail`、`getNotificationTemplateDetail`、`getSiteMessageDetail`）
 - 合并重复的站内信 API：`getNotifications`/`readNotification` 改用 `getSiteMessageList`/`markSiteMessageRead`（相同端点），同步更新 TheHeader.vue
 - 合并重复的用户详情 API：`detail` 改用 `getUserDetail`，同步更新 member-center.vue

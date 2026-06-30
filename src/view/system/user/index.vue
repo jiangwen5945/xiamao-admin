@@ -351,7 +351,7 @@ export default {
           if (this.modalType === 1) {
             delete params.password;
           } else {
-            params.password = "123456";
+            params.password = Math.random().toString(36).slice(2, 10) + 'Aa1!';
           }
         }
         if (this.modalType === 0) {

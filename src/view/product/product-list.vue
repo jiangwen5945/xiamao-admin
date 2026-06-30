@@ -267,7 +267,7 @@
         <p v-if="!currentDetail.specs?.length" class="detail-empty">暂无规格</p>
       
         <h4 class="detail-section-title">商品详情</h4>
-        <div class="detail-content" v-html="currentDetail.detail || '暂无介绍'"></div>
+        <div class="detail-content" v-html="$sanitize(currentDetail.detail) || '暂无介绍'"></div>
       </div>
     </el-drawer>
   </div>

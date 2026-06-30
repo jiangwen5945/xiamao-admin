@@ -12,6 +12,9 @@ module.exports = defineConfig({
   chainWebpack: config => {
     config.plugin('html').tap(args => {
       args[0].title = "瞎猫管理系统";
+      args[0].meta = [
+        { 'http-equiv': 'Content-Security-Policy', content: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:3000" }
+      ]
       return args;
     })
     // 生产环境 开启gzip压缩

@@ -4,7 +4,9 @@ import router from './router'
 import store from './store'
 import ElementUI from 'element-ui';
 import * as api from './api'
+import DOMPurify from 'dompurify'
 Vue.prototype.$api = api
+Vue.prototype.$sanitize = (html) => html ? DOMPurify.sanitize(html) : ''
 
 
 // import "../src/styles/theme/dark.css";
