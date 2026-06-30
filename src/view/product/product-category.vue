@@ -116,9 +116,13 @@ export default {
   methods: {
     // 获取分类列表
     async getList() {
-      const res = await this.$api.getGoodsCategory(this.queryParam);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const res = await this.$api.getGoodsCategory(this.queryParam);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     // 切换页码
     handleCurrentChange(currentPageNum) {
@@ -126,22 +130,20 @@ export default {
       this.getList();
     },
     // 删除（带确认提示）
-    handleDelete(row) {
-      this.$confirm("确定删除?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteGoodsCategory(row).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.getList();
-          });
+    async handleDelete(row) {
+      try {
+        await this.$confirm("确定删除?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteGoodsCategory(row)
+        this.$message({ type: "success", message: "删除成功!" });
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
     // 编辑：回填数据
     handleEdit(row) {
@@ -157,19 +159,22 @@ export default {
     },
     // 提交表单
     async submit() {
-      await this.$refs.form.validate();
-      if (this.modalType === 0) {
-        await this.$api.createGoodsCategory(this.form);
+      try {
+        await this.$refs.form.validate();
+        if (this.modalType === 0) {
+          await this.$api.createGoodsCategory(this.form);
+        } else {
+          await this.$api.updateGoodsCategory(this.form);
+        }
+        this.$message({
+          type: "success",
+          message: this.modalType === 0 ? "添加成功" : "编辑成功",
+        });
         this.getList();
-      } else {
-        await this.$api.updateGoodsCategory(this.form);
-        this.getList();
+        this.handleClose();
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
-      this.handleClose();
-      this.$message({
-        type: "success",
-        message: this.modalType === 0 ? "添加成功" : "编辑成功",
-      });
     },
     // 关闭弹窗
     handleClose() {

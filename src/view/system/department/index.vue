@@ -80,30 +80,31 @@ export default {
   },
   methods: {
     async getData() {
-      const { list, total } = await this.$api.getClassList(this.queryParam)
-      this.tableData = list
-      this.total = total
+      try {
+        const { list, total } = await this.$api.getClassList(this.queryParam)
+        this.tableData = list
+        this.total = total
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
-    handleDelete(id) {
-      this.$confirm('确定删除?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.$api.deleteClass(id).then(() => {
-          this.$message({
-            type: 'success',
-            message: '删除成功!'
-          });
-          this.getData()
+    async handleDelete(id) {
+      try {
+        await this.$confirm('确定删除?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
         })
-      }).catch(err => {
-        if (err === 'cancel') return
+        await this.$api.deleteClass(id)
         this.$message({
-          type: 'error',
-          message: err
+          type: 'success',
+          message: '删除成功!'
         });
-      });
+        this.getData()
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
     handleEdit(row) {
       this.isVisible = true
@@ -115,26 +116,24 @@ export default {
       this.isVisible = true
       this.modalType = 0
     },
-    submit() {
-      this.$refs.form.validate( async valid => {
-        if (valid) {
-          switch (this.modalType) {
-            case 0:
-              await this.$api.createClass(this.form)
-              this.getData()
-              break;
-            case 1:
-              await this.$api.updateClass(this.form)
-              this.getData()
-              break;
-          }
-          this.handleClose()
-          this.$message({
-            type: 'success',
-            message: this.modalType === 0 ? '添加成功' : '编辑成功'
-          });
+    async submit() {
+      try {
+        const valid = await this.$refs.form.validate()
+        if (!valid) return
+        if (this.modalType === 0) {
+          await this.$api.createClass(this.form)
+        } else {
+          await this.$api.updateClass(this.form)
         }
-      })
+        this.$message({
+          type: 'success',
+          message: this.modalType === 0 ? '添加成功' : '编辑成功'
+        });
+        this.getData()
+        this.handleClose()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
+      }
     },
     handleClose() {
       this.form = createDefaultForm()

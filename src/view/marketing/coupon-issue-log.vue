@@ -91,10 +91,14 @@ export default {
   },
   methods: {
     async getList() {
-      const params = { ...this.queryParam }
-      const res = await this.$api.getCouponIssueLog(params)
-      this.tableData = res.list
-      this.total = res.total
+      try {
+        const params = { ...this.queryParam }
+        const res = await this.$api.getCouponIssueLog(params)
+        this.tableData = res.list
+        this.total = res.total
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(page) {
       this.queryParam.page = page

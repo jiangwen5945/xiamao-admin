@@ -172,20 +172,20 @@ export default {
     },
 
     /** 删除角色（含确认弹窗） */
-    handleDelete(id) {
-      this.$confirm('确定删除?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.$api.deleteRole(id).then(() => {
-          this.$message({ type: 'success', message: '删除成功!' })
-          this.getData()
+    async handleDelete(id) {
+      try {
+        await this.$confirm('确定删除?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
         })
-      }).catch(err => {
-        if (err === 'cancel') return
-        this.$message({ type: 'error', message: err })
-      })
+        await this.$api.deleteRole(id)
+        this.$message({ type: 'success', message: '删除成功!' })
+        this.getData()
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
 
     /** 打开新增弹窗 */
@@ -211,23 +211,26 @@ export default {
 
     /** 提交表单 */
     async submit() {
-      const valid = await this.$refs.form.validate().catch(() => false)
-      if (!valid) return
-      if (this.modalType === 0) {
-        await this.$api.createRole(this.form)
-      } else {
-        await this.$api.updateRole(this.form)
+      try {
+        const valid = await this.$refs.form.validate().catch(() => false)
+        if (!valid) return
+        if (this.modalType === 0) {
+          await this.$api.createRole(this.form)
+        } else {
+          await this.$api.updateRole(this.form)
+        }
+        const menus = await this.$api.getUserMenus()
+        await this.$store.dispatch('updateMenuArray', menus)
+        await this.$store.dispatch('addMenuToRouter', this.$router)
+        this.$message({
+          type: 'success',
+          message: this.modalType === 0 ? '添加成功' : '编辑成功'
+        })
+        this.getData()
+        this.handleClose()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
-      // 刷新当前用户的菜单缓存，避免需要重新登录才能生效
-      const menus = await this.$api.getUserMenus()
-      await this.$store.dispatch('updateMenuArray', menus)
-      await this.$store.dispatch('addMenuToRouter', this.$router)
-      this.getData()
-      this.handleClose()
-      this.$message({
-        type: 'success',
-        message: this.modalType === 0 ? '添加成功' : '编辑成功'
-      })
     },
 
     /** 关闭弹窗，重置表单并清除校验 */

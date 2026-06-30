@@ -218,10 +218,14 @@ export default {
   methods: {
     dayjs,
     async getList() {
-      const params = cleanParams(this.queryParam)
-      const res = await this.$api.getReviewList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam)
+        const res = await this.$api.getReviewList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(currentPageNum) {
       this.queryParam.page = currentPageNum;
@@ -239,9 +243,13 @@ export default {
       this.selectedIds = rows.map(r => r.id)
     },
     async handleDetail(row) {
-      const res = await this.$api.getReviewDetail({ id: row.id })
-      this.currentDetail = res
-      this.detailVisible = true
+      try {
+        const res = await this.$api.getReviewDetail({ id: row.id })
+        this.currentDetail = res
+        this.detailVisible = true
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleReply(row) {
       this.replyTarget = row
@@ -250,35 +258,41 @@ export default {
       this.replyVisible = true
     },
     async submitReply() {
-      await this.$api.replyReview({ id: this.replyForm.id, reply: this.replyForm.reply })
-      this.$message({ type: 'success', message: '回复成功' })
-      this.replyVisible = false
-      this.getList()
+      try {
+        await this.$api.replyReview({ id: this.replyForm.id, reply: this.replyForm.reply })
+        this.$message({ type: 'success', message: '回复成功' })
+        this.replyVisible = false
+        this.getList()
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     async handleToggleStatus(row) {
-      const newStatus = row.status === 1 ? 0 : 1
-      await this.$api.updateReviewStatus({ id: row.id, status: newStatus })
-      this.$message({ type: 'success', message: newStatus === 1 ? '已显示' : '已隐藏' })
-      this.getList()
+      try {
+        const newStatus = row.status === 1 ? 0 : 1
+        await this.$api.updateReviewStatus({ id: row.id, status: newStatus })
+        this.$message({ type: 'success', message: newStatus === 1 ? '已显示' : '已隐藏' })
+        this.getList()
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个评价?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteReview({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个评价?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteReview({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
   },
 };

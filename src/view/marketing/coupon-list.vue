@@ -268,10 +268,14 @@ export default {
   },
   methods: {
     async getList() {
-      const params = cleanParams(this.queryParam)
-      const res = await this.$api.getCouponList(params)
-      this.tableData = res.list
-      this.total = res.total
+      try {
+        const params = cleanParams(this.queryParam)
+        const res = await this.$api.getCouponList(params)
+        this.tableData = res.list
+        this.total = res.total
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(page) {
       this.queryParam.page = page
@@ -288,20 +292,21 @@ export default {
     handleSelectionChange(rows) {
       this.selectedIds = rows.map(r => r.id)
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!Array.isArray(ids)) ids = [ids.id]
       if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个优惠券?`, '提示', {
-        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning',
-      })
-        .then(() => {
-          this.$api.deleteCoupon({ ids }).then(() => {
-            this.$message({ type: 'success', message: '删除成功!' })
-            this.selectedIds = []
-            this.getList()
-          })
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个优惠券?`, '提示', {
+          confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning',
         })
-        .catch(err => { if (err !== 'cancel') this.$message({ type: 'error', message: err }) })
+        await this.$api.deleteCoupon({ ids })
+        this.$message({ type: 'success', message: '删除成功!' })
+        this.selectedIds = []
+        this.getList()
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
     handleDetail(row) {
       this.currentDetail = row
@@ -321,25 +326,29 @@ export default {
     },
     async submit() {
       if (!this.dateRange || this.dateRange.length !== 2) {
-        this.$message.warning('请选择有效期')
+        this.$message.warning('请选择优惠券有效期')
         return
       }
-      await this.$refs.form.validate()
-      const payload = { ...this.form }
-      delete payload.created_at
-      delete payload.updated_at
-      payload.start_time = this.dateRange[0]
-      payload.end_time = this.dateRange[1]
-      if (this.modalType === 0) {
-        delete payload.id
-        await this.$api.createCoupon(payload)
-      } else {
-        delete payload.used_count
-        await this.$api.updateCoupon(payload)
+      try {
+        await this.$refs.form.validate()
+        const payload = { ...this.form }
+        delete payload.created_at
+        delete payload.updated_at
+        payload.start_time = this.dateRange[0]
+        payload.end_time = this.dateRange[1]
+        if (this.modalType === 0) {
+          delete payload.id
+          await this.$api.createCoupon(payload)
+        } else {
+          delete payload.used_count
+          await this.$api.updateCoupon(payload)
+        }
+        this.$message({ type: 'success', message: this.modalType === 0 ? '添加成功' : '编辑成功' })
+        this.getList()
+        this.handleClose()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
-      this.getList()
-      this.handleClose()
-      this.$message({ type: 'success', message: this.modalType === 0 ? '添加成功' : '编辑成功' })
     },
     handleClose() {
       this.form = createDefaultForm()
@@ -369,10 +378,14 @@ export default {
       }
     },
     async submitIssue() {
-      await this.$api.issueCoupon(this.issueForm)
-      this.$message({ type: 'success', message: '发放成功!' })
-      this.issueVisible = false
-      this.getList()
+      try {
+        await this.$api.issueCoupon(this.issueForm)
+        this.$message({ type: 'success', message: '发放成功!' })
+        this.issueVisible = false
+        this.getList()
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
   },
 }

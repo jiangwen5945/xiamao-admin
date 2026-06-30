@@ -283,9 +283,13 @@ export default {
     },
     // 获取用户列表
     async getUserList() {
-      const res = await this.$api.getUser(this.queryParam);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const res = await this.$api.getUser(this.queryParam);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     // 切换页码
     handleCurrentChange(currentPageNum) {
@@ -298,28 +302,23 @@ export default {
       this.getUserList();
     },
     // 删除用户（带确认提示）
-    handleDelete(id) {
-      this.$confirm("确定删除?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.delUser(id).then(() => {
-            this.$message({
-              type: "success",
-              message: "删除成功!",
-            });
-            this.getUserList();
-          });
+    async handleDelete(id) {
+      try {
+        await this.$confirm("确定删除?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({
-            type: "error",
-            message: err,
-          });
+        await this.$api.delUser(id)
+        this.$message({
+          type: "success",
+          message: "删除成功!",
         });
+        this.getUserList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
     // 编辑：回填数据
     handleEdit(row) {
@@ -343,35 +342,32 @@ export default {
     },
     // 提交表单
     async submit() {
-      const params = {
-        ...this.form,
-        roles: this.form.roles.join(","),
-      };
-      // 编辑时密码为空则不修改，新增时密码为空则使用默认值
-      if (!params.password) {
-        if (this.modalType === 1) {
-          delete params.password;
-        } else {
-          params.password = "123456";
+      try {
+        await this.$refs.form.validate();
+        const params = {
+          ...this.form,
+          roles: this.form.roles.join(","),
+        };
+        if (!params.password) {
+          if (this.modalType === 1) {
+            delete params.password;
+          } else {
+            params.password = "123456";
+          }
         }
-      }
-      let flag = false;
-      await this.$refs.form.validate();
-      if (this.modalType === 0) {
-        await this.$api.addUser(params);
-        this.getUserList();
-        flag = true;
-      } else {
-        await this.$api.editUser(params);
-        this.getUserList();
-        flag = true;
-      }
-      if (flag) {
-        this.handleClose();
+        if (this.modalType === 0) {
+          await this.$api.addUser(params);
+        } else {
+          await this.$api.editUser(params);
+        }
         this.$message({
           type: "success",
           message: this.modalType === 0 ? "添加成功" : "编辑成功",
         });
+        this.getUserList();
+        this.handleClose();
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
     },
     // 关闭弹窗

@@ -413,10 +413,14 @@ export default {
   methods: {
     // 获取会员列表
     async getList() {
-      const params = cleanParams(this.queryParam);
-      const res = await this.$api.getMemberList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam);
+        const res = await this.$api.getMemberList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     // 切换页码
     handleCurrentChange(currentPageNum) {
@@ -438,25 +442,23 @@ export default {
       this.selectedIds = rows.map((r) => r.id);
     },
     // 删除（支持单个或批量）
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!Array.isArray(ids)) ids = [ids.id];
       if (!ids.length) return;
-      this.$confirm(`确定删除选中的 ${ids.length} 个会员?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteMember({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个会员?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteMember({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
     // 查看详情
     handleDetail(row) {
@@ -539,20 +541,24 @@ export default {
     },
     // 提交表单
     async submit() {
-      await this.$refs.form.validate();
-      const payload = { ...this.form };
-      delete payload.createdAt;
-      delete payload.updatedAt;
-      if (this.modalType === 0) delete payload.id;
-      await (this.modalType === 0
-        ? this.$api.createMember(payload)
-        : this.$api.updateMember(payload));
-      this.getList();
-      this.handleClose();
-      this.$message({
-        type: "success",
-        message: this.modalType === 0 ? "添加成功" : "编辑成功",
-      });
+      try {
+        await this.$refs.form.validate();
+        const payload = { ...this.form };
+        delete payload.createdAt;
+        delete payload.updatedAt;
+        if (this.modalType === 0) delete payload.id;
+        await (this.modalType === 0
+          ? this.$api.createMember(payload)
+          : this.$api.updateMember(payload));
+        this.$message({
+          type: "success",
+          message: this.modalType === 0 ? "添加成功" : "编辑成功",
+        });
+        this.getList();
+        this.handleClose();
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
+      }
     },
     // 关闭弹窗
     handleClose() {

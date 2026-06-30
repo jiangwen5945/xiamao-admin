@@ -115,6 +115,7 @@ export default {
         })
       } catch (e) {
         this.loading = false
+        // 错误已在拦截器中处理
       }
     },
     keyUpSubmit(e) {

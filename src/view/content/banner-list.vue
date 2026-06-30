@@ -208,10 +208,14 @@ export default {
   methods: {
     dayjs,
     async getList() {
-      const params = cleanParams(this.queryParam)
-      const res = await this.$api.getBannerList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam)
+        const res = await this.$api.getBannerList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(page) {
       this.queryParam.page = page;
@@ -298,32 +302,34 @@ export default {
       })
     },
     async handleToggleStatus(row) {
-      const newStatus = row.status === 1 ? 0 : 1
-      await this.$api.updateBannerStatus({ id: row.id, status: newStatus })
-      this.$message({ type: 'success', message: newStatus === 1 ? '已启用' : '已禁用' })
-      this.getList()
+      try {
+        const newStatus = row.status === 1 ? 0 : 1
+        await this.$api.updateBannerStatus({ id: row.id, status: newStatus })
+        this.$message({ type: 'success', message: newStatus === 1 ? '已启用' : '已禁用' })
+        this.getList()
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleDetail(row) {
       this.$alert(`标题：${row.title}\n链接：${row.link || '无'}\n排序：${row.sort}\n备注：${row.remark || '无'}`, 'Banner 详情')
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个Banner?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteBanner({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个Banner?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteBanner({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
   },
 };

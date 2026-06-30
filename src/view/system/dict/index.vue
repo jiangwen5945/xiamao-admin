@@ -120,9 +120,9 @@ export default {
           this.currentType = this.typeOptions[0]
           await this.getList()
         }
-      } catch (e) {
-        console.error(e)
-      }
+  } catch (e) {
+    // 错误已在拦截器中处理
+  }
     },
     async getList() {
       if (!this.currentType) return
@@ -156,35 +156,39 @@ export default {
         remark: row.remark,
       }
     },
-    handleDelete(row) {
-      this.$confirm('确定删除该字典项？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }).then(() => {
-        this.$api.deleteDictItem(row.id).then(() => {
-          this.$message({ type: 'success', message: '删除成功' })
-          this.getList()
+    async handleDelete(row) {
+      try {
+        await this.$confirm('确定删除该字典项？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
         })
-      }).catch(err => {
-        if (err === 'cancel') return
-        this.$message({ type: 'error', message: err })
-      })
+        await this.$api.deleteDictItem(row.id)
+        this.$message({ type: 'success', message: '删除成功' })
+        this.getList()
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
     async submit() {
-      await this.$refs.form.validate()
-      if (this.modalType === 0) {
-        await this.$api.createDictItem(this.currentType, this.form)
-      } else {
-        const row = this.tableData.find(r => r.item_code === this.form.item_code)
-        await this.$api.updateDictItem(row.id, this.form)
+      try {
+        await this.$refs.form.validate()
+        if (this.modalType === 0) {
+          await this.$api.createDictItem(this.currentType, this.form)
+        } else {
+          const row = this.tableData.find(r => r.item_code === this.form.item_code)
+          await this.$api.updateDictItem(row.id, this.form)
+        }
+        this.$message({
+          type: 'success',
+          message: this.modalType === 0 ? '添加成功' : '修改成功',
+        })
+        this.handleClose()
+        await this.getList()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
-      this.$message({
-        type: 'success',
-        message: this.modalType === 0 ? '添加成功' : '修改成功',
-      })
-      this.handleClose()
-      await this.getList()
     },
     handleClose() {
       this.form = createDefaultForm()

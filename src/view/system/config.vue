@@ -107,13 +107,17 @@ export default {
   },
   methods: {
     async getConfigs() {
-      const res = await this.$api.getSystemConfigs()
-      this.configList = res.list || []
-      const form = {}
-      for (const c of this.configList) {
-        form[c.key] = parseValue(c.value, c.key)
+      try {
+        const res = await this.$api.getSystemConfigs()
+        this.configList = res.list || []
+        const form = {}
+        for (const c of this.configList) {
+          form[c.key] = parseValue(c.value, c.key)
+        }
+        this.configForm = form
+      } catch (e) {
+        // 错误已在拦截器中处理
       }
-      this.configForm = form
     },
     async handleSave() {
       this.saving = true

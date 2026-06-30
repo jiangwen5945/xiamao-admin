@@ -28,11 +28,10 @@ http.interceptors.response.use(function (response) {
       return result || {}
     } else {
       Message({ type: 'error', message });
-      console.error(message);
-      return result || {}
+      return Promise.reject(new Error(message))
     }
   }
-  return {}
+  return Promise.reject(new Error('请求失败'))
 }, function (error) {
   if (error.response && error.response.status === 401) {
     if (!isRedirecting) {
@@ -41,10 +40,10 @@ http.interceptors.response.use(function (response) {
       Message({ type: 'warning', message: '登录已过期，请重新登录' })
       window.location.href = '/#/login'
     }
-    return {}
+    return Promise.reject(error)
   }
   Message({ type: 'error', message: '网络异常，请稍后重试' })
-  return {}
+  return Promise.reject(error)
 })
 
 export default http

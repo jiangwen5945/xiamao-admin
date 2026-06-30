@@ -403,11 +403,15 @@ export default {
   },
   methods: {
     async getList() {
-      const params = cleanParams(this.queryParam)
-      if (params.tags) params.tags = params.tags.join(',')
-      const res = await this.$api.getProductList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam)
+        if (params.tags) params.tags = params.tags.join(',')
+        const res = await this.$api.getProductList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     async handleImport({ header, results }) {
       const res = await this.$api.importExcel({ header, results })
@@ -443,25 +447,23 @@ export default {
       this.queryParam.page = 1
       this.getList()
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!Array.isArray(ids)) ids = [ids.id]
       if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个商品?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteProduct({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个商品?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteProduct({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
     handleDetail(row) {
       this.currentDetail = row

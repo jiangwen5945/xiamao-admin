@@ -235,10 +235,14 @@ export default {
   },
   methods: {
     async getList() {
-      const params = cleanParams(this.queryParam)
-      const res = await this.$api.getFlashSaleList(params)
-      this.tableData = res.list
-      this.total = res.total
+      try {
+        const params = cleanParams(this.queryParam)
+        const res = await this.$api.getFlashSaleList(params)
+        this.tableData = res.list
+        this.total = res.total
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(page) {
       this.queryParam.page = page
@@ -255,20 +259,21 @@ export default {
     handleSelectionChange(rows) {
       this.selectedIds = rows.map(r => r.id)
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!Array.isArray(ids)) ids = [ids.id]
       if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个秒杀活动?`, '提示', {
-        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning',
-      })
-        .then(() => {
-          this.$api.deleteFlashSale({ ids }).then(() => {
-            this.$message({ type: 'success', message: '删除成功!' })
-            this.selectedIds = []
-            this.getList()
-          })
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个秒杀活动?`, '提示', {
+          confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning',
         })
-        .catch(err => { if (err !== 'cancel') this.$message({ type: 'error', message: err }) })
+        await this.$api.deleteFlashSale({ ids })
+        this.$message({ type: 'success', message: '删除成功!' })
+        this.selectedIds = []
+        this.getList()
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
     statusLabel(row) {
       if (row.status === 0) return '已禁用'
@@ -289,10 +294,14 @@ export default {
       return 'success'
     },
     async handleDetail(row) {
-      const res = await this.$api.getFlashSaleDetail({ id: row.id })
-      this.currentDetail = res
-      this.itemList = res.FlashSaleItems || []
-      this.detailVisible = true
+      try {
+        const res = await this.$api.getFlashSaleDetail({ id: row.id })
+        this.currentDetail = res
+        this.itemList = res.FlashSaleItems || []
+        this.detailVisible = true
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleEdit(row) {
       this.isVisible = true
@@ -311,21 +320,25 @@ export default {
         this.$message.warning('请选择活动时间')
         return
       }
-      await this.$refs.form.validate()
-      const payload = { ...this.form }
-      delete payload.created_at
-      delete payload.updated_at
-      payload.start_time = this.dateRange[0]
-      payload.end_time = this.dateRange[1]
-      if (this.modalType === 0) {
-        delete payload.id
-        await this.$api.createFlashSale(payload)
-      } else {
-        await this.$api.updateFlashSale(payload)
+      try {
+        await this.$refs.form.validate()
+        const payload = { ...this.form }
+        delete payload.created_at
+        delete payload.updated_at
+        payload.start_time = this.dateRange[0]
+        payload.end_time = this.dateRange[1]
+        if (this.modalType === 0) {
+          delete payload.id
+          await this.$api.createFlashSale(payload)
+        } else {
+          await this.$api.updateFlashSale(payload)
+        }
+        this.$message({ type: 'success', message: this.modalType === 0 ? '添加成功' : '编辑成功' })
+        this.getList()
+        this.handleClose()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
-      this.getList()
-      this.handleClose()
-      this.$message({ type: 'success', message: this.modalType === 0 ? '添加成功' : '编辑成功' })
     },
     handleClose() {
       this.form = createDefaultForm()
@@ -363,30 +376,36 @@ export default {
       this.$refs.itemForm?.clearValidate()
     },
     async submitItem() {
-      await this.$refs.itemForm.validate()
-      if (this.itemModalType === 0) {
-        await this.$api.addFlashSaleItem(this.itemForm)
-      } else {
-        await this.$api.updateFlashSaleItem(this.itemForm)
+      try {
+        await this.$refs.itemForm.validate()
+        if (this.itemModalType === 0) {
+          await this.$api.addFlashSaleItem(this.itemForm)
+        } else {
+          await this.$api.updateFlashSaleItem(this.itemForm)
+        }
+        this.$message({ type: 'success', message: this.itemModalType === 0 ? '添加成功' : '编辑成功' })
+        this.handleItemClose()
+        const res = await this.$api.getFlashSaleDetail({ id: this.currentDetail.id })
+        this.currentDetail = res
+        this.itemList = res.FlashSaleItems || []
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
       }
-      this.$message({ type: 'success', message: this.itemModalType === 0 ? '添加成功' : '编辑成功' })
-      this.handleItemClose()
-      const res = await this.$api.getFlashSaleDetail({ id: this.currentDetail.id })
-      this.currentDetail = res
-      this.itemList = res.FlashSaleItems || []
     },
-    handleItemDelete(row) {
-      this.$confirm('确定删除该秒杀商品?', '提示', {
-        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning',
-      })
-        .then(async () => {
-          await this.$api.deleteFlashSaleItem({ id: row.id })
-          this.$message({ type: 'success', message: '删除成功!' })
-          const res = await this.$api.getFlashSaleDetail({ id: this.currentDetail.id })
-          this.currentDetail = res
-          this.itemList = res.FlashSaleItems || []
+    async handleItemDelete(row) {
+      try {
+        await this.$confirm('确定删除该秒杀商品?', '提示', {
+          confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning',
         })
-        .catch(err => { if (err !== 'cancel') this.$message({ type: 'error', message: err }) })
+        await this.$api.deleteFlashSaleItem({ id: row.id })
+        this.$message({ type: 'success', message: '删除成功!' })
+        const res = await this.$api.getFlashSaleDetail({ id: this.currentDetail.id })
+        this.currentDetail = res
+        this.itemList = res.FlashSaleItems || []
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
   },
 }

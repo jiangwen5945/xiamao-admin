@@ -370,17 +370,24 @@ export default {
     this.getList()
   },
   methods: {
-    /** 获取顶部统计卡片数据 */
-    async getStats() {
-      const res = await this.$api.getStockStats()
-      this.stats = res || this.stats
+        async getStats() {
+      try {
+        const res = await this.$api.getStockStats()
+        this.stats = res || this.stats
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     /** 获取库存分页列表 */
     async getList() {
-      const params = { ...this.queryParam }
-      const res = await this.$api.getStockList(params)
-      this.tableData = res && res.list
-      this.total = res.total
+      try {
+        const params = { ...this.queryParam }
+        const res = await this.$api.getStockList(params)
+        this.tableData = res && res.list
+        this.total = res.total
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     /** 分页切换 */
     handleCurrentChange(currentPageNum) {
@@ -431,14 +438,17 @@ export default {
       this.inboundVisible = false
       this.$refs.inboundForm?.clearValidate()
     },
-    /** 提交入库 */
-    async submitInbound() {
-      await this.$refs.inboundForm.validate()
-      await this.$api.inboundStock(this.inboundForm)
-      this.$message({ type: 'success', message: '入库成功' })
-      this.handleInboundClose()
-      this.getList()
-      this.getStats()
+        async submitInbound() {
+      try {
+        await this.$refs.inboundForm.validate()
+        await this.$api.inboundStock(this.inboundForm)
+        this.$message({ type: 'success', message: '入库成功' })
+        this.handleInboundClose()
+        this.getList()
+        this.getStats()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
+      }
     },
 
     /** 打开盘点调整弹窗 */
@@ -454,14 +464,17 @@ export default {
       this.adjustVisible = false
       this.$refs.adjustForm?.clearValidate()
     },
-    /** 提交盘点调整 */
-    async submitAdjust() {
-      await this.$refs.adjustForm.validate()
-      await this.$api.adjustStock(this.adjustForm)
-      this.$message({ type: 'success', message: '调整成功' })
-      this.handleAdjustClose()
-      this.getList()
-      this.getStats()
+        async submitAdjust() {
+      try {
+        await this.$refs.adjustForm.validate()
+        await this.$api.adjustStock(this.adjustForm)
+        this.$message({ type: 'success', message: '调整成功' })
+        this.handleAdjustClose()
+        this.getList()
+        this.getStats()
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
+      }
     },
 
     /** 打开变动记录弹窗 */
@@ -481,15 +494,18 @@ export default {
       this.movementPage = page
       this.loadMovements(this.currentRow?.product_id)
     },
-    /** 加载变动记录数据 */
-    async loadMovements(product_id) {
-      const res = await this.$api.getStockMovements({
-        product_id,
-        page: this.movementPage,
-        pageSize: this.movementPageSize,
-      })
-      this.movementData = res.list
-      this.movementTotal = res.total
+        async loadMovements(product_id) {
+      try {
+        const res = await this.$api.getStockMovements({
+          product_id,
+          page: this.movementPage,
+          pageSize: this.movementPageSize,
+        })
+        this.movementData = res.list
+        this.movementTotal = res.total
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     /** 变动类型对应的标签颜色 */
     typeTagType(type) {

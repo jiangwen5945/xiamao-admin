@@ -18,6 +18,17 @@
 - 替换 17 个页面的 `Object.keys(params).forEach` 手写清理逻辑为 `cleanParams()` 调用（member-list, product-list, product-review, order-list, after-sales-list, banner-list, article-list, coupon-list, flash-sale-list, template-list, message-list, finance-list, return-list, log/index, pending-tab, shipped-tab）
 - 新增 `loading` 状态：banner-list, article-list, flash-sale-list, coupon-list, template-list, message-list, stock-list 等页面
 
+### fix
+- 修复 Axios 响应拦截器错误处理：非 200 状态码和网络异常改为 `Promise.reject` 而非返回空对象，使页面级 `catch` 块生效，消除成功提示在 API 失败时误触发的 Bug
+- 页面级错误处理统一规范化（覆盖 25+ 文件）：
+  - `async getList()` 统一包裹 `try/catch`，确保异常时不产生未处理的 Promise rejection
+  - `async submit()` 统一包裹 `try/catch/finally`，防止重复提交/操作失败无反馈
+  - 批量删除操作从 Promise 链（`.then().catch()`）统一改为 `async/await + try/catch`，消除 `$confirm` 取消与 API 错误混在同一个 catch 中的问题
+  - 所有空 catch 块补充注释，无法恢复的空 catch 标记为"错误已在拦截器中处理"
+  - `Login.vue` catch 补充用户可见错误提示
+  - 修复 `loadExpressCompany`、`loadTypes`、`loadAddressList` 等辅助方法中的静默空 catch
+  - 处理状态切换（toggleStatus/toggleTop）、发送消息、表单提交等操作的未保护 await 调用
+
 ### refactor
 - CommonExcel 整体重构：新增 `columns` prop 支持自定义模板格式化导出、`onImport` prop 解耦导入逻辑、`importText`/`exportText` prop 可配置按钮文案
 - CommonExcel 移除死代码：`getTableHeader`/`generateData`/`formatExcelDate`/`excelData`/`readerData`，消除 `this.$parent` 紧耦合

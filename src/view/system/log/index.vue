@@ -220,16 +220,23 @@ export default {
   },
   methods: {
     async getList() {
-      const params = { ...this.queryParam };
-      if (Array.isArray(params.dateRange)) {
-        params.startDate = params.dateRange[0];
-        params.endDate = params.dateRange[1];
+      this.loading = true
+      try {
+        const params = { ...this.queryParam };
+        if (Array.isArray(params.dateRange)) {
+          params.startDate = params.dateRange[0];
+          params.endDate = params.dateRange[1];
+        }
+        const cleaned = cleanParams(params)
+        Object.assign(params, cleaned)
+        const res = await this.$api.getLogList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      } finally {
+        this.loading = false
       }
-      const cleaned = cleanParams(params)
-      Object.assign(params, cleaned)
-      const res = await this.$api.getLogList(params);
-      this.tableData = res.list;
-      this.total = res.total;
     },
     handleCurrentChange(currentPageNum) {
       this.queryParam.page = currentPageNum;
@@ -251,25 +258,23 @@ export default {
     handleSelectionChange(rows) {
       this.selectedIds = rows.map((r) => r.id);
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!Array.isArray(ids)) ids = [ids.id];
       if (!ids.length) return;
-      this.$confirm(`确定删除选中的 ${ids.length} 条日志?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteLog({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 条日志?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteLog({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
     handleDetail(row) {
       this.currentDetail = row;

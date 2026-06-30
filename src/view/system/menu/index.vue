@@ -248,16 +248,24 @@ export default {
   methods: {
     /** 刷新侧边栏菜单缓存 */
     async refreshMenus() {
-      const menus = await getUserMenus()
-      await this.$store.dispatch('updateMenuArray', menus)
-      await this.$store.dispatch('addMenuToRouter', this.$router)
+      try {
+        const menus = await getUserMenus()
+        await this.$store.dispatch('updateMenuArray', menus)
+        await this.$store.dispatch('addMenuToRouter', this.$router)
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
 
     /** 获取菜单列表：后端返回扁平数据，前端组装树 */
     async getData() {
-      const { list } = await this.$api.getMenuList(this.queryParam);
-      this.flatList = list;
-      this.tableData = this.buildTree(list);
+      try {
+        const { list } = await this.$api.getMenuList(this.queryParam);
+        this.flatList = list;
+        this.tableData = this.buildTree(list);
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
 
     /** 将扁平菜单列表组装为树结构 */
@@ -271,28 +279,25 @@ export default {
     },
 
     /** 删除菜单 */
-    handleDelete(row) {
+    async handleDelete(row) {
       const { id } = row
-      // 有子菜单时禁止删除
       if (this.flatList.some((m) => m.parent_id === id)) {
         return this.$message({ type: 'warning', message: '该菜单下有子菜单，无法删除' })
       }
-      this.$confirm('确定删除?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      })
-        .then(() => {
-          this.$api.deleteMenu({ id }).then(async () => {
-            this.$message({ type: 'success', message: '删除成功!' });
-            this.getData();
-            await this.refreshMenus();
-          });
+      try {
+        await this.$confirm('确定删除?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
         })
-        .catch((err) => {
-          if (err === 'cancel') return;
-          this.$message({ type: 'error', message: err });
-        });
+        await this.$api.deleteMenu({ id })
+        this.$message({ type: 'success', message: '删除成功!' });
+        this.getData();
+        await this.refreshMenus();
+      } catch (e) {
+        if (e === 'cancel') return
+        // 错误已在拦截器中处理
+      }
     },
 
     /** 编辑菜单：打开弹窗并填充当前行数据 */
@@ -332,7 +337,7 @@ export default {
           message: this.modalType === 0 ? '添加成功' : '编辑成功',
         });
       } catch (e) {
-        console.error('操作失败', e)
+        // 错误已在拦截器中处理
       }
     },
 

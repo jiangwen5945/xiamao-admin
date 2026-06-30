@@ -227,10 +227,14 @@ export default {
   methods: {
     dayjs,
     async getList() {
-      const params = cleanParams(this.queryParam)
-      const res = await this.$api.getArticleList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam)
+        const res = await this.$api.getArticleList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(page) {
       this.queryParam.page = page;
@@ -308,40 +312,50 @@ export default {
       })
     },
     async handleToggleStatus(row) {
-      const newStatus = row.status === 1 ? 0 : 1
-      await this.$api.updateArticleStatus({ id: row.id, status: newStatus })
-      this.$message({ type: 'success', message: newStatus === 1 ? '已发布' : '已下线' })
-      this.getList()
+      try {
+        const newStatus = row.status === 1 ? 0 : 1
+        await this.$api.updateArticleStatus({ id: row.id, status: newStatus })
+        this.$message({ type: 'success', message: newStatus === 1 ? '已发布' : '已下线' })
+        this.getList()
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     async handleToggleTop(row) {
-      const newTop = row.is_top === 1 ? 0 : 1
-      await this.$api.toggleArticleTop({ id: row.id, is_top: newTop })
-      this.$message({ type: 'success', message: newTop === 1 ? '已置顶' : '已取消置顶' })
-      this.getList()
+      try {
+        const newTop = row.is_top === 1 ? 0 : 1
+        await this.$api.toggleArticleTop({ id: row.id, is_top: newTop })
+        this.$message({ type: 'success', message: newTop === 1 ? '已置顶' : '已取消置顶' })
+        this.getList()
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     async handleDetail(row) {
-      const res = await this.$api.getArticleDetail({ id: row.id })
-      this.currentDetail = res
-      this.detailVisible = true
+      try {
+        const res = await this.$api.getArticleDetail({ id: row.id })
+        this.currentDetail = res
+        this.detailVisible = true
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!ids.length) return
-      this.$confirm(`确定删除选中的 ${ids.length} 个公告?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteArticle({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个公告?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteArticle({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
   },
 };

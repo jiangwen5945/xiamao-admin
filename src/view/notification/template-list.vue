@@ -195,10 +195,14 @@ export default {
   },
   methods: {
     async getList() {
-      const params = cleanParams(this.queryParam);
-      const res = await this.$api.getNotificationTemplateList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam);
+        const res = await this.$api.getNotificationTemplateList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(currentPageNum) {
       this.queryParam.page = currentPageNum;
@@ -215,25 +219,23 @@ export default {
     handleSelectionChange(rows) {
       this.selectedIds = rows.map((r) => r.id);
     },
-    handleDelete(ids) {
+    async handleDelete(ids) {
       if (!Array.isArray(ids)) ids = [ids.id];
       if (!ids.length) return;
-      this.$confirm(`确定删除选中的 ${ids.length} 个模板?`, "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      })
-        .then(() => {
-          this.$api.deleteNotificationTemplate({ ids }).then(() => {
-            this.$message({ type: "success", message: "删除成功!" });
-            this.selectedIds = [];
-            this.getList();
-          });
+      try {
+        await this.$confirm(`确定删除选中的 ${ids.length} 个模板?`, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
         })
-        .catch((err) => {
-          if (err === "cancel") return;
-          this.$message({ type: "error", message: err });
-        });
+        await this.$api.deleteNotificationTemplate({ ids })
+        this.$message({ type: "success", message: "删除成功!" });
+        this.selectedIds = [];
+        this.getList();
+      } catch (e) {
+        if (e === "cancel") return;
+        // 错误已在拦截器中处理
+      }
     },
     handleEdit(row) {
       this.isVisible = true;
@@ -246,20 +248,24 @@ export default {
       this.modalType = 0;
     },
     async submit() {
-      await this.$refs.form.validate();
-      const payload = { ...this.form };
-      delete payload.createdAt;
-      delete payload.updatedAt;
-      if (this.modalType === 0) delete payload.id;
-      await (this.modalType === 0
-        ? this.$api.addNotificationTemplate(payload)
-        : this.$api.updateNotificationTemplate(payload));
-      this.getList();
-      this.handleClose();
-      this.$message({
-        type: "success",
-        message: this.modalType === 0 ? "添加成功" : "编辑成功",
-      });
+      try {
+        await this.$refs.form.validate();
+        const payload = { ...this.form };
+        delete payload.createdAt;
+        delete payload.updatedAt;
+        if (this.modalType === 0) delete payload.id;
+        await (this.modalType === 0
+          ? this.$api.addNotificationTemplate(payload)
+          : this.$api.updateNotificationTemplate(payload));
+        this.$message({
+          type: "success",
+          message: this.modalType === 0 ? "添加成功" : "编辑成功",
+        });
+        this.getList();
+        this.handleClose();
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
+      }
     },
     handleClose() {
       this.form = createDefaultForm();

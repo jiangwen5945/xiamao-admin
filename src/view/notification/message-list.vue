@@ -257,14 +257,22 @@ export default {
   },
   methods: {
     async getList() {
-      const params = cleanParams(this.queryParam);
-      const res = await this.$api.getSiteMessageList(params);
-      this.tableData = res.list;
-      this.total = res.total;
+      try {
+        const params = cleanParams(this.queryParam);
+        const res = await this.$api.getSiteMessageList(params);
+        this.tableData = res.list;
+        this.total = res.total;
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     async getTemplates() {
-      const res = await this.$api.getNotificationTemplateList({ page: 1, pageSize: 999 });
-      this.templateOptions = res.list || [];
+      try {
+        const res = await this.$api.getNotificationTemplateList({ page: 1, pageSize: 999 });
+        this.templateOptions = res.list || [];
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleCurrentChange(currentPageNum) {
       this.queryParam.page = currentPageNum;
@@ -281,13 +289,16 @@ export default {
     handleSelectionChange(rows) {
       this.selectedIds = rows.map((r) => r.id);
     },
-    handleMarkRead(ids) {
+    async handleMarkRead(ids) {
       if (!ids.length) return;
-      this.$api.markSiteMessageRead({ ids }).then(() => {
+      try {
+        await this.$api.markSiteMessageRead({ ids })
         this.$message({ type: "success", message: "标记已读成功!" });
         this.selectedIds = [];
         this.getList();
-      });
+      } catch (e) {
+        // 错误已在拦截器中处理
+      }
     },
     handleDetail(row) {
       this.currentDetail = row;
@@ -307,18 +318,22 @@ export default {
       }
     },
     async handleSendSubmit() {
-      await this.$refs.sendForm.validate();
-      const payload = { ...this.sendForm };
-      if (!payload.template_id) delete payload.template_id;
-      payload.receiver_ids = payload.receiver_ids
-        .split(",")
-        .map((id) => Number(id.trim()))
-        .filter((id) => !isNaN(id) && id > 0);
-      await this.$api.sendSiteMessage(payload);
-      this.$message({ type: "success", message: "发送成功!" });
-      this.handleSendClose();
-      this.getList();
-      this.$root.$emit("notification-sent");
+      try {
+        await this.$refs.sendForm.validate();
+        const payload = { ...this.sendForm };
+        if (!payload.template_id) delete payload.template_id;
+        payload.receiver_ids = payload.receiver_ids
+          .split(",")
+          .map((id) => Number(id.trim()))
+          .filter((id) => !isNaN(id) && id > 0);
+        await this.$api.sendSiteMessage(payload);
+        this.$message({ type: "success", message: "发送成功!" });
+        this.handleSendClose();
+        this.getList();
+        this.$root.$emit("notification-sent");
+      } catch (e) {
+        // 校验失败或业务错误已在拦截器中处理
+      }
     },
     handleSendClose() {
       this.sendForm = createDefaultSendForm();
