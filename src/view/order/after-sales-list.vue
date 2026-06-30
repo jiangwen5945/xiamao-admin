@@ -67,15 +67,13 @@
               @click="handleReview(scope.row)"
             >审核</el-button>
             <el-button
-              v-else-if="scope.row.status === 1"
+              v-else-if="scope.row.status === 1 && scope.row.type === 3"
               type="success"
               size="mini"
               @click="handleComplete(scope.row)"
             >完成操作</el-button>
-            <span v-else class="no-action">-</span>
             <el-button
               v-if="scope.row.type === 1 && scope.row.status >= 1"
-              type="text"
               size="mini"
               @click="handleToReturn(scope.row)"
             >退货物流</el-button>
@@ -187,6 +185,7 @@
 
 <script>
 import dayjs from "dayjs";
+import { cleanParams } from "@/utils/helpers";
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 
@@ -225,11 +224,7 @@ export default {
   methods: {
     async getList() {
       this.loading = true
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       try {
         const res = await this.$api.getAfterSalesList(params);
         this.tableData = res.list;

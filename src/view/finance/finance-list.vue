@@ -143,6 +143,7 @@
 
 <script>
 import dayjs from 'dayjs'
+import { cleanParams } from "@/utils/helpers";
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 import CommonExcel from "@/components/CommonExcel.vue";
@@ -199,11 +200,7 @@ export default {
   methods: {
     async getList() {
       this.loading = true
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       try {
         const res = await this.$api.getFinanceList(params)
         this.tableData = res.list

@@ -52,7 +52,6 @@
 import Cookie from 'js-cookie'
 import rules from '@/utils/rules';
 import { sha256 } from '@/utils/hash'
-import { mapMutations } from 'vuex'
 
 function parseJwt(token) {
   try {
@@ -86,7 +85,6 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(['setMenuArray', 'addMenuToRouter', 'setUserInfo', 'setCurrentRole']),
     async handleLogin() {
       try {
         const isRule = await this.$refs.formRef.validate()
@@ -104,13 +102,13 @@ export default {
           this.$api.getUserMenus(),
           this.$api.getUserDetail({ id: userId })
         ])
-        this.setMenuArray(menus)
-        this.setUserInfo(user)
+        await this.$store.dispatch('updateMenuArray', menus)
+        await this.$store.dispatch('updateUserInfo', user)
         const userRoles = user.Roles || []
         if (userRoles.length) {
-          this.setCurrentRole(userRoles[0])
+          await this.$store.dispatch('updateCurrentRole', userRoles[0])
         }
-        this.addMenuToRouter(this.$router)
+        await this.$store.dispatch('addMenuToRouter', this.$router)
         this.$message.success('登录成功!')
         this.$router.push('/home').catch(err => {
           if (err.name !== 'NavigationDuplicated') console.warn(err)

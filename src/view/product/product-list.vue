@@ -281,6 +281,7 @@ import CommonExcel from "@/components/CommonExcel.vue";
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
+import { cleanParams } from "@/utils/helpers";
 
 const QUERY_PARAM = {
   page: 1,
@@ -402,11 +403,7 @@ export default {
   },
   methods: {
     async getList() {
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       if (params.tags) params.tags = params.tags.join(',')
       const res = await this.$api.getProductList(params);
       this.tableData = res.list;

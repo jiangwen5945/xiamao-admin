@@ -118,12 +118,18 @@
               @click="handleGoDelivery(scope.row)"
             >去发货</el-button>
             <el-button
+              v-if="scope.row.status === 2"
+              type="success"
+              size="mini"
+              @click="handleConfirm(scope.row)"
+            >确认收货</el-button>
+            <el-button
               v-if="scope.row.status === 3"
               type="warning"
               size="mini"
               @click="handleAfterSales(scope.row)"
             >售后</el-button>
-            <span v-if="![0, 1, 3].includes(scope.row.status)" class="no-action">-</span>
+            <span v-if="![0, 1, 2, 3].includes(scope.row.status)" class="no-action">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -290,6 +296,7 @@ import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 import CommonExcel from "@/components/CommonExcel";
 import dayjs from 'dayjs'
+import { cleanParams } from "@/utils/helpers";
 
 const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '', status: '', consignee: '', created_at_from: '', created_at_to: '', payment_time_from: '', payment_time_to: '' }
 const createDefaultAddForm = () => ({
@@ -362,11 +369,7 @@ export default {
   methods: {
     async getList() {
       this.loading = true
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       try {
         const res = await this.$api.getAdminOrderList(params);
         this.tableData = res.list;
@@ -453,6 +456,21 @@ export default {
         this.$message({ type: 'error', message: err })
       })
     },
+    handleConfirm(row) {
+      this.$confirm('确认该订单已收货?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      }).then(() => {
+        this.$api.confirmOrder({ id: row.id }).then(() => {
+          this.$message({ type: 'success', message: '确认收货成功' })
+          this.getList()
+        })
+      }).catch(err => {
+        if (err === 'cancel') return
+        this.$message({ type: 'error', message: err })
+      })
+    },
     // 新增订单
     handleAdd() {
       this.addForm = createDefaultAddForm()
@@ -515,8 +533,8 @@ export default {
       this.afterSalesVisible = true
     },
     // 去发货
-    handleGoDelivery() {
-      this.$router.push('/logistics/delivery')
+    handleGoDelivery(row) {
+      this.$router.push({ path: '/logistics/delivery', query: { order_no: row.order_no } })
     },
     async submitAfterSales() {
       this.afterSalesLoading = true

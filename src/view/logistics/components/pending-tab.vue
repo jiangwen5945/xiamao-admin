@@ -1,11 +1,5 @@
 <template>
   <div v-loading="loading">
-    <FilterBar @query="handleQuery" @reset="handleReset">
-      <FilterBarItem label="订单号">
-        <el-input v-model="queryParam.order_no" clearable @keyup.enter="handleQuery" />
-      </FilterBarItem>
-    </FilterBar>
-
     <div class="table-content">
       <el-table :data="tableData" stripe>
         <el-table-column label="订单号">
@@ -99,18 +93,17 @@
 </template>
 
 <script>
-import FilterBar from "@/components/filter/FilterBar"
-import FilterBarItem from "@/components/filter/FilterBarItem"
 import dayjs from "dayjs"
+import { cleanParams } from "@/utils/helpers"
 
 const QUERY_PARAM = { page: 1, pageSize: 10, order_no: '' }
 const createShipForm = () => ({ express_company_id: '', express_no: '' })
 
 export default {
   name: "PendingTab",
-  components: { FilterBar, FilterBarItem },
   props: {
-    expressCompanyList: { type: Array, default: () => [] }
+    expressCompanyList: { type: Array, default: () => [] },
+    filterParams: { type: Object, default: () => ({}) },
   },
   filters: {
     dateTime(val) {
@@ -141,11 +134,12 @@ export default {
   methods: {
     async getList() {
       this.loading = true
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = {
+        page: this.queryParam.page,
+        pageSize: this.queryParam.pageSize,
+        order_no: this.filterParams.order_no || this.queryParam.order_no || '',
+      }
+      cleanParams(params)
       try {
         const res = await this.$api.getLogisticsPending(params)
         this.tableData = res.list
@@ -154,16 +148,16 @@ export default {
         this.loading = false
       }
     },
-    handleCurrentChange(page) {
-      this.queryParam.page = page
-      this.getList()
-    },
-    handleQuery() {
+    handleFilterQuery() {
       this.queryParam.page = 1
       this.getList()
     },
-    handleReset() {
+    handleFilterReset() {
       this.queryParam = { ...QUERY_PARAM }
+      this.getList()
+    },
+    handleCurrentChange(page) {
+      this.queryParam.page = page
       this.getList()
     },
     handleDetail(row) {

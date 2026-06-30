@@ -1,35 +1,5 @@
 <template>
   <div v-loading="loading">
-    <FilterBar @query="handleQuery" @reset="handleReset">
-      <FilterBarItem label="订单号">
-        <el-input v-model="queryParam.order_no" clearable @keyup.enter="handleQuery" />
-      </FilterBarItem>
-      <FilterBarItem label="物流公司">
-        <el-select v-model="queryParam.express_company_id" placeholder="全部" clearable>
-          <el-option
-            v-for="item in expressCompanyList"
-            :key="item.id"
-            :label="item.item_name"
-            :value="item.id"
-          />
-        </el-select>
-      </FilterBarItem>
-      <FilterBarItem label="运单号">
-        <el-input v-model="queryParam.express_no" clearable @keyup.enter="handleQuery" />
-      </FilterBarItem>
-      <FilterBarItem label="发货时间">
-        <el-date-picker
-          v-model="deliveryRange"
-          type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          value-format="yyyy-MM-dd"
-          @change="handleDeliveryRangeChange"
-        />
-      </FilterBarItem>
-    </FilterBar>
-
     <div class="table-content">
       <el-table :data="tableData" stripe>
         <el-table-column label="订单号" min-width="180">
@@ -74,13 +44,7 @@
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="scope">
-            <el-button
-              v-if="listStatus === 0"
-              type="primary"
-              size="mini"
-              @click="handleSign(scope.row)"
-            >签收</el-button>
-            <span v-else class="no-action">-</span>
+            <span class="no-action">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -152,26 +116,16 @@
 </template>
 
 <script>
-import FilterBar from "@/components/filter/FilterBar"
-import FilterBarItem from "@/components/filter/FilterBarItem"
 import dayjs from 'dayjs'
+import { cleanParams } from "@/utils/helpers"
 
-const QUERY_PARAM = {
-  page: 1,
-  pageSize: 10,
-  order_no: '',
-  express_company_id: '',
-  express_no: '',
-  shipped_at_from: '',
-  shipped_at_to: '',
-}
+const QUERY_PARAM = { page: 1, pageSize: 10 }
 
 export default {
   name: "ShippedTab",
-  components: { FilterBar, FilterBarItem },
   props: {
     expressCompanyList: { type: Array, default: () => [] },
-    listStatus: { type: Number, required: true }
+    filterParams: { type: Object, default: () => ({}) },
   },
   filters: {
     dateTime(val) {
@@ -184,7 +138,6 @@ export default {
       tableData: [],
       total: 0,
       queryParam: { ...QUERY_PARAM },
-      deliveryRange: null,
       detailVisible: false,
       currentDetail: {},
     }
@@ -195,13 +148,13 @@ export default {
   methods: {
     async getList() {
       this.loading = true
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = {
+        page: this.queryParam.page,
+        pageSize: this.queryParam.pageSize,
+        ...this.filterParams,
+      }
+      cleanParams(params)
       try {
-        params.status = this.listStatus
         const res = await this.$api.getLogisticsList(params);
         this.tableData = res.list;
         this.total = res.total;
@@ -209,48 +162,21 @@ export default {
         this.loading = false
       }
     },
+    handleFilterQuery() {
+      this.queryParam.page = 1
+      this.getList()
+    },
+    handleFilterReset() {
+      this.queryParam = { ...QUERY_PARAM }
+      this.getList()
+    },
     handleCurrentChange(currentPageNum) {
       this.queryParam.page = currentPageNum;
       this.getList();
     },
-    handleQuery() {
-      this.queryParam.page = 1;
-      this.getList();
-    },
-    handleReset() {
-      this.queryParam = { ...QUERY_PARAM }
-      this.deliveryRange = null
-      this.getList()
-    },
-    handleTabActivated() {
-      this.getList()
-    },
-    handleDeliveryRangeChange(val) {
-      if (val) {
-        this.queryParam.shipped_at_from = val[0]
-        this.queryParam.shipped_at_to = val[1]
-      } else {
-        this.queryParam.shipped_at_from = ''
-        this.queryParam.shipped_at_to = ''
-      }
-    },
     handleDetail(row) {
       this.currentDetail = row
       this.detailVisible = true
-    },
-    async handleSign(row) {
-      await this.$confirm('确定签收该物流单?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      })
-      try {
-        await this.$api.signLogistics({ order_id: row.order_id })
-        this.$message({ type: 'success', message: '签收成功' })
-        this.getList()
-      } catch (e) {
-        this.$message({ type: 'error', message: e || '签收失败' })
-      }
     },
     shipStatusText(val) {
       const map = { 0: '运输中', 1: '已签收' }

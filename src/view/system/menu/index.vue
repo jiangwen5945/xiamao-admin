@@ -151,7 +151,6 @@
 
 <script>
 import dayjs from 'dayjs'
-import { mapMutations } from 'vuex'
 import { getUserMenus } from '@/api'
 import { getElementIcons } from '@/utils/getElementIcons'
 
@@ -247,13 +246,11 @@ export default {
   },
 
   methods: {
-    ...mapMutations(['setMenuArray', 'addMenuToRouter']),
-
     /** 刷新侧边栏菜单缓存 */
     async refreshMenus() {
       const menus = await getUserMenus()
-      this.setMenuArray(menus)
-      this.addMenuToRouter(this.$router)
+      await this.$store.dispatch('updateMenuArray', menus)
+      await this.$store.dispatch('addMenuToRouter', this.$router)
     },
 
     /** 获取菜单列表：后端返回扁平数据，前端组装树 */

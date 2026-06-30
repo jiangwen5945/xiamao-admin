@@ -108,7 +108,7 @@ export default {
   watch: {
     // 路由变化时更新面包屑
     '$route.path'() {
-      this.$store.commit('updateCrumbs', this.$route.path)
+      this.$store.dispatch('updateCrumbs', this.$route.path)
     }
   },
   mounted() {

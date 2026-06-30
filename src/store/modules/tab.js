@@ -1,54 +1,40 @@
 import {resetRouter} from '@/router'
 import { getUserMenus } from '@/api'
+
+function loadFromStorage(key, fallback = null) {
+  try {
+    const val = localStorage.getItem(key)
+    return val ? JSON.parse(val) : fallback
+  } catch {
+    return fallback
+  }
+}
+
 export default {
   state: {
-    isCollapse: false, // 控制菜单展开或关闭
-     // 导航栏数组
+    isCollapse: false,
     navList: [{
       path: '/home',
       name: '首页',
       icon: 's-home'
     }],
-    // 面包屑数组
     crumbsList: [{
       path: '/home',
       name: '首页'
     }],
-    menuArray: [],
-    userInfo: '',
-    currentRole: JSON.parse(localStorage.getItem('currentRole') || 'null'), // 当前角色
+    menuArray: loadFromStorage('menuArray', []),
+    userInfo: loadFromStorage('userInfo', ''),
+    currentRole: loadFromStorage('currentRole', null),
   },
   mutations: {
-    // 更新面包屑数据
-    updateCrumbs(state, path){
-      const menuArray = JSON.parse(localStorage.getItem('menuArray')) || []
-      const getLabel = function(arr,p){
-        for (let i = 0; i < arr.length; i++) {
-          if(arr[i].path === p){
-            return arr[i].name
-          }
-          if(arr[i].children){
-            for (let j = 0; j < arr[i].children.length; j++) {
-              if( arr[i].children[j].path === p){
-                return arr[i].children[j].name
-              }
-            }
-          }
-        }
-      }
-      const crumb = {
-        path,
-        name: getLabel(menuArray, path)
-      } 
+    setCrumbs(state, { path, name }) {
       if (path !== '/home') {
-        state.crumbsList.splice(1,1,crumb)
+        state.crumbsList.splice(1, 1, { path, name })
       }
     },
-    // 折叠侧边菜单栏
     handleCollapseMenu(state) {
       state.isCollapse = !state.isCollapse
     },
-    // 更新导航栏数组数据
     updateNavList(state, item) {
       if (item.path !== '/home' && state.navList.findIndex(e => e.path === item.path) === -1) {
         state.navList.push(item)
@@ -60,23 +46,36 @@ export default {
     },
     setUserInfo(state, val) {
       state.userInfo = val
-      localStorage.setItem('userInfo', JSON.stringify(val))
     },
-    // 设置当前角色
     setCurrentRole(state, role) {
       state.currentRole = role
-      localStorage.setItem('currentRole', JSON.stringify(role))
     },
-    // 设置菜单数据
     setMenuArray(state, val) {
       state.menuArray = val
+    },
+  },
+  actions: {
+    updateUserInfo({ commit }, val) {
+      commit('setUserInfo', val)
+      localStorage.setItem('userInfo', JSON.stringify(val))
+    },
+    updateCurrentRole({ commit }, role) {
+      commit('setCurrentRole', role)
+      localStorage.setItem('currentRole', JSON.stringify(role))
+    },
+    updateMenuArray({ commit }, val) {
+      commit('setMenuArray', val)
       localStorage.setItem('menuArray', JSON.stringify(val))
     },
-    // 动态注册路由
-    addMenuToRouter(state, router) {
-      if (!localStorage.getItem('menuArray')) return
-      const menuArray = JSON.parse(localStorage.getItem('menuArray'))
-      state.menuArray = menuArray
+    async switchCurrentRole({ dispatch }, { role, router }) {
+      await dispatch('updateCurrentRole', role)
+      const menus = await getUserMenus(role && role.id)
+      await dispatch('updateMenuArray', menus)
+      dispatch('addMenuToRouter', router)
+    },
+    addMenuToRouter({ state }, router) {
+      if (!state.menuArray || !state.menuArray.length) return
+      const menuArray = state.menuArray
       const fomatMenuArr = []
       menuArray.forEach(el => {
         if (el.children && el.children.length) {
@@ -100,15 +99,20 @@ export default {
       fomatMenuArr.forEach(item => {
         router.addRoute('main', item)
       })
-    }
-  },
-  actions:{
-    async switchCurrentRole({ commit }, { role, router }) {
-      commit('setCurrentRole', role)
-      const menus = await getUserMenus(role && role.id)
-      commit('setMenuArray', menus)
-      commit('addMenuToRouter', router)
+    },
+    updateCrumbs({ state, commit }, path) {
+      const menuArray = state.menuArray
+      const getLabel = function(arr, p) {
+        for (let i = 0; i < arr.length; i++) {
+          if (arr[i].path === p) return arr[i].name
+          if (arr[i].children) {
+            for (let j = 0; j < arr[i].children.length; j++) {
+              if (arr[i].children[j].path === p) return arr[i].children[j].name
+            }
+          }
+        }
+      }
+      commit('setCrumbs', { path, name: getLabel(menuArray, path) })
     },
   }
-
 }

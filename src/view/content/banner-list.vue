@@ -149,6 +149,7 @@
 import FilterBar from "@/components/filter/FilterBar";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 import dayjs from "dayjs";
+import { cleanParams } from "@/utils/helpers";
 import Cookie from "js-cookie";
 
 const QUERY_PARAM = {
@@ -207,10 +208,7 @@ export default {
   methods: {
     dayjs,
     async getList() {
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       const res = await this.$api.getBannerList(params);
       this.tableData = res.list;
       this.total = res.total;

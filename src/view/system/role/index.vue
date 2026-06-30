@@ -105,7 +105,6 @@
 <script>
 
 import rules from '@/utils/rules'
-import { mapMutations } from 'vuex'
 
 const QUERY_PARAM = { page: 1, total: 10 }
 const createDefaultForm = () => ({ id: '', name: '', menuIds: [], status: false })
@@ -146,7 +145,6 @@ export default {
   },
 
   methods: {
-    ...mapMutations(['setMenuArray', 'addMenuToRouter']),
     /** 将扁平菜单列表组装为树结构 */
     buildTree(menus, parentId = null) {
       return menus
@@ -222,8 +220,8 @@ export default {
       }
       // 刷新当前用户的菜单缓存，避免需要重新登录才能生效
       const menus = await this.$api.getUserMenus()
-      this.setMenuArray(menus)
-      this.addMenuToRouter(this.$router)
+      await this.$store.dispatch('updateMenuArray', menus)
+      await this.$store.dispatch('addMenuToRouter', this.$router)
       this.getData()
       this.handleClose()
       this.$message({

@@ -3,6 +3,22 @@
 ## [Unreleased]
 
 ### refactor
+- 订单履约流程重构：发货列表只负责发货，订单列表负责确认收货；发货列表"运输中"/"已签收"合并为"已发货"只读 tab
+- shipped-tab 移除签收按钮，改为只读展示；delivery-list 由 3 tab 改为 2 tab（待发货/已发货）
+- 后端 signLogistics 不再自动完成订单，订单确认收货统一由 order-list 的 confirmOrder 控制
+- 订单列表"去发货"按钮携带 order_id 参数跳转到发货页，发货页自动填充订单号搜索
+- 售后流程约束：退货退款（type=1）禁止直接"完成操作"，强制走退货签收入库流程，避免库存丢失；仅退款（type=3）保持原有"完成操作"按钮
+- return-list 去掉"全部"tab，默认显示"待退货"tab
+- delivery-list 将 pending-tab/shipped-tab 的 FilterBar 提取到父级容器，统一筛选栏
+- 移除全局 mixin（`src/mixin/index.js`），零引用死代码
+- Vuex tab 模块重构：mutation 纯化（仅修改 state），localStorage 写入和路由操作迁移到 action；state 初始化直接从 localStorage 读取，消除状态不同步
+
+### refactor
+- 新增 `src/utils/helpers.js`：`cleanParams()` 工具函数，统一清理查询参数中的空值（''/null/undefined/空数组）
+- 替换 17 个页面的 `Object.keys(params).forEach` 手写清理逻辑为 `cleanParams()` 调用（member-list, product-list, product-review, order-list, after-sales-list, banner-list, article-list, coupon-list, flash-sale-list, template-list, message-list, finance-list, return-list, log/index, pending-tab, shipped-tab）
+- 新增 `loading` 状态：banner-list, article-list, flash-sale-list, coupon-list, template-list, message-list, stock-list 等页面
+
+### refactor
 - CommonExcel 整体重构：新增 `columns` prop 支持自定义模板格式化导出、`onImport` prop 解耦导入逻辑、`importText`/`exportText` prop 可配置按钮文案
 - CommonExcel 移除死代码：`getTableHeader`/`generateData`/`formatExcelDate`/`excelData`/`readerData`，消除 `this.$parent` 紧耦合
 - CommonExcel 导出/导入全程包裹 `loading` emit，用户可感知操作状态

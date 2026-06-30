@@ -1,13 +1,5 @@
 <template>
   <div class="page" v-loading="loading">
-    <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-      <el-tab-pane label="全部" name="all" />
-      <el-tab-pane label="待退货" name="0" />
-      <el-tab-pane label="退货中" name="1" />
-      <el-tab-pane label="已签收" name="2" />
-      <el-tab-pane label="已入库" name="3" />
-    </el-tabs>
-
     <FilterBar @query="handleQuery" @reset="handleReset">
       <FilterBarItem label="订单号">
         <el-input v-model="queryParam.order_no" clearable @keyup.enter="handleQuery" />
@@ -30,6 +22,13 @@
         />
       </FilterBarItem>
     </FilterBar>
+
+    <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+      <el-tab-pane label="待退货" name="0" />
+      <el-tab-pane label="退货中" name="1" />
+      <el-tab-pane label="已签收" name="2" />
+      <el-tab-pane label="已入库" name="3" />
+    </el-tabs>
 
     <div class="table-content">
       <el-table :data="tableData" stripe @selection-change="handleSelectionChange">
@@ -217,6 +216,7 @@
 import FilterBar from "@/components/filter/FilterBar"
 import FilterBarItem from "@/components/filter/FilterBarItem"
 import dayjs from 'dayjs'
+import { cleanParams } from "@/utils/helpers"
 
 const QUERY_PARAM = {
   page: 1,
@@ -228,7 +228,7 @@ const QUERY_PARAM = {
   returned_at_to: '',
 }
 
-const TAB_STATUS_MAP = { all: '', '0': '0', '1': '1', '2': '2', '3': '3' }
+const TAB_STATUS_MAP = { '0': '0', '1': '1', '2': '2', '3': '3' }
 
 const createDefaultForm = () => ({
   id: '',
@@ -251,7 +251,7 @@ export default {
       loading: false,
       tableData: [],
       total: 0,
-      activeTab: 'all',
+      activeTab: '0',
       queryParam: { ...QUERY_PARAM },
       returnRange: null,
       selectedIds: [],
@@ -282,11 +282,7 @@ export default {
   methods: {
     async getList() {
       this.loading = true
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       try {
         const res = await this.$api.getReturnList(params)
         this.tableData = res.list
@@ -326,7 +322,7 @@ export default {
     handleReset() {
       this.queryParam = { ...QUERY_PARAM }
       this.returnRange = null
-      this.activeTab = this.$route.query.after_sales_id ? 'all' : 'all'
+      this.activeTab = this.$route.query.after_sales_id ? '0' : '0'
       const afterSalesId = this.$route.query.after_sales_id
       if (afterSalesId) {
         this.queryParam.after_sales_id = afterSalesId

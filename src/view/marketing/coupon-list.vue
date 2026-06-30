@@ -206,6 +206,7 @@
 import FilterBar from "@/components/filter/FilterBar.vue";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 import dayjs from "dayjs";
+import { cleanParams } from "@/utils/helpers";
 
 const QUERY_PARAM = {
   page: 1,
@@ -267,11 +268,7 @@ export default {
   },
   methods: {
     async getList() {
-      const params = { ...this.queryParam }
-      Object.keys(params).forEach(k => {
-        if (params[k] === '' || params[k] === null || params[k] === undefined) delete params[k]
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k]
-      })
+      const params = cleanParams(this.queryParam)
       const res = await this.$api.getCouponList(params)
       this.tableData = res.list
       this.total = res.total

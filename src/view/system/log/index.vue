@@ -165,6 +165,7 @@ import FilterBar from "@/components/filter/FilterBar.vue";
 import FilterBarItem from "@/components/filter/FilterBarItem";
 import CommonExcel from "@/components/CommonExcel.vue";
 import dayjs from "dayjs";
+import { cleanParams } from "@/utils/helpers";
 
 const QUERY_PARAM = {
   page: 1,
@@ -224,12 +225,8 @@ export default {
         params.startDate = params.dateRange[0];
         params.endDate = params.dateRange[1];
       }
-      delete params.dateRange;
-      Object.keys(params).forEach((k) => {
-        if (params[k] === "" || params[k] === null || params[k] === undefined)
-          delete params[k];
-        if (Array.isArray(params[k]) && !params[k].length) delete params[k];
-      });
+      const cleaned = cleanParams(params)
+      Object.assign(params, cleaned)
       const res = await this.$api.getLogList(params);
       this.tableData = res.list;
       this.total = res.total;
