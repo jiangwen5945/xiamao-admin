@@ -53,7 +53,6 @@ export default {
     handleVisiable(e) {
       switch (e.target.visibilityState) {
         case 'prerender':
-          console.log('prerender');
           break;
         case 'hidden':
           // 记录不住当前页面的开始时间点

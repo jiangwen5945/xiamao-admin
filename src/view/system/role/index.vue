@@ -133,9 +133,6 @@ export default {
     // 获取菜单列表数据
     this.$api.getMenuList().then(res => {
       this.menuList = this.buildTree(res.list)
-      console.log('this.menuList111', this.menuList);
-      
-      // this.menuList = res.list
     })
   },
 
@@ -204,8 +201,6 @@ export default {
       if (Array.isArray(cloneRow.Menus)) {
         cloneRow.menuIds = cloneRow.Menus.map((item) => item.id)
       }
-      console.log('cloneRow', cloneRow);
-      
       this.form = cloneRow
     },
 

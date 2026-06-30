@@ -278,7 +278,6 @@ export default {
       formData.append("file", file);
       formData.append("directory", "avatar") // 指定上传图片存放位置的分类目录
       const res = await this.$api.uploadFiles(formData);
-      console.log("上传头像图片", res);
       this.$set(this.form, "avatar", res.url);
     },
     // 获取用户列表

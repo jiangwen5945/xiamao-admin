@@ -35,6 +35,9 @@
 - 合并重复的用户详情 API：`detail` 改用 `getUserDetail`，同步更新 member-center.vue
 - `src/api/index.js` 从 465 行缩减至 421 行
 
+### chore
+- 清理所有遗留调试代码（5 处 `console.log`）：`LockScreen.vue`（prerender）、`product-list.vue`（payload）、`role/index.vue`（menuList/cloneRow）、`user/index.vue`（上传头像）
+
 ### refactor
 - CommonExcel 整体重构：新增 `columns` prop 支持自定义模板格式化导出、`onImport` prop 解耦导入逻辑、`importText`/`exportText` prop 可配置按钮文案
 - CommonExcel 移除死代码：`getTableHeader`/`generateData`/`formatExcelDate`/`excelData`/`readerData`，消除 `this.$parent` 紧耦合

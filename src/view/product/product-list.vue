@@ -523,7 +523,6 @@ export default {
         delete payload.createdAt
         delete payload.updatedAt
         if (this.modalType === 0) delete payload.id
-        console.log('payload', payload);
         await (this.modalType === 0 ? this.$api.createProduct(payload) : this.$api.updateProduct(payload))
         this.getList()
         this.handleClose()
