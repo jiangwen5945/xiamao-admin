@@ -46,7 +46,7 @@
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
         <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleDelete(selectedIds)">批量删除</el-button>
-        <CommonExcel :table-data="tableData" :loading.sync="loading" filename="商品列表" @import-success="getList" />
+        <CommonExcel :table-data="tableData" :loading.sync="loading" :columns="exportColumns" filename="商品列表" @import-success="getList" />
       </div>
     </div>
 
@@ -361,6 +361,18 @@ export default {
     };
   },
   computed: {
+    exportColumns() {
+      return [
+        { label: '编号', prop: 'id' },
+        { label: '商品名称', prop: 'name' },
+        { label: '价格', prop: 'price' },
+        { label: '品牌', prop: 'brand' },
+        { label: '分类', formatter: (row) => row.Category?.name || '-' },
+        { label: '标签', formatter: (row) => (row.tags || []).join(', ') },
+        { label: '商品状态', formatter: (row) => row.status === 1 ? '上架' : '下架' },
+        { label: '活动', formatter: (row) => (row.flash_sales || []).map(fs => fs.name).join(', ') || '-' },
+      ]
+    },
     uploadFileList() {
       return this.form.images.map((img, i) => ({
         name: `image-${i + 1}`,

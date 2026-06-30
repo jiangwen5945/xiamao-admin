@@ -48,7 +48,7 @@
     <div class="table-header">
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增订单</el-button>
-        <CommonExcel :tableData="tableData" filename="订单列表" />
+        <CommonExcel :tableData="tableData" :columns="exportColumns" filename="订单列表" />
       </div>
     </div>
 
@@ -336,7 +336,22 @@ export default {
       paymentDateRange: null,
     };
   },
-
+  computed: {
+    exportColumns() {
+      return [
+        { label: '订单号', prop: 'order_no' },
+        { label: '状态', formatter: (row) => this.statusText(row.status) },
+        { label: '商品总额', formatter: (row) => `¥${row.total_amount}` },
+        { label: '实付金额', formatter: (row) => `¥${row.actual_amount}` },
+        { label: '支付方式', formatter: (row) => row.payment_method || '-' },
+        { label: '支付时间', formatter: (row) => row.payment_time ? dayjs(row.payment_time).format('YYYY-MM-DD HH:mm:ss') : '-' },
+        { label: '收货人', prop: 'consignee' },
+        { label: '收货电话', prop: 'consignee_phone' },
+        { label: '收货地址', prop: 'shipping_address' },
+        { label: '创建时间', formatter: (row) => row.createdAt ? dayjs(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
+      ]
+    },
+  },
   async created() {
     this.getList();
     this.loadProducts();

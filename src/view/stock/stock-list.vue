@@ -42,7 +42,7 @@
     <!-- 导出按钮 -->
     <div class="table-header">
       <div class="left">
-        <CommonExcel :table-data="tableData" filename="库存列表" />
+        <CommonExcel :table-data="tableData" :columns="exportColumns" filename="库存列表" />
       </div>
     </div>
 
@@ -87,7 +87,6 @@
             <span :class="stockClass(scope.row.quantity)">{{ scope.row.quantity }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="locked_quantity" label="锁定库存" />
         <el-table-column prop="sales_count" label="累计销量" sortable="custom" />
         <!-- 库存状态标签：缺货/不足/正常 -->
         <el-table-column label="库存状态">
@@ -250,7 +249,6 @@
           <el-descriptions-item label="价格">¥{{ currentDetail.Product?.price }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ currentDetail.Product?.Category?.name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="当前库存">{{ currentDetail.quantity }}</el-descriptions-item>
-          <el-descriptions-item label="锁定库存">{{ currentDetail.locked_quantity }}</el-descriptions-item>
           <el-descriptions-item label="累计销量">{{ currentDetail.sales_count }}</el-descriptions-item>
           <el-descriptions-item label="库存状态">
             <el-tag v-if="currentDetail.quantity === 0" type="danger" size="mini">缺货</el-tag>
@@ -346,6 +344,20 @@ export default {
         quantity: [{ required: true, message: '数量不能为空', trigger: 'blur' }],
       },
     };
+  },
+  computed: {
+    exportColumns() {
+      return [
+        { label: '商品名称', formatter: (row) => row.Product?.name || '' },
+        { label: '编号', prop: 'product_id' },
+        { label: '价格', formatter: (row) => `¥${row.Product?.price || ''}` },
+        { label: '分类', formatter: (row) => row.Product?.Category?.name || '-' },
+        { label: '当前库存', prop: 'quantity' },
+        { label: '累计销量', prop: 'sales_count' },
+        { label: '库存状态', formatter: (row) => row.quantity === 0 ? '缺货' : row.quantity <= 10 ? '不足' : '正常' },
+        { label: '上架状态', formatter: (row) => row.Product?.status === 1 ? '上架' : '下架' },
+      ]
+    },
   },
   async created() {
     this.getStats()             // 获取统计概览

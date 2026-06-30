@@ -17,7 +17,7 @@
     <div class="table-header">
       <div class="left">
         <el-button type="primary" size="medium" @click="handleGenerate">生成对账</el-button>
-        <CommonExcel :tableData="tableData" filename="对账列表" />
+        <CommonExcel :table-data="tableData" :columns="exportColumns" filename="对账列表" />
       </div>
     </div>
 
@@ -70,17 +70,22 @@
     <el-dialog title="生成对账" :visible="generateVisible" :before-close="handleGenerateClose" center width="500px">
       <el-form ref="generateForm" :model="generateForm" :rules="generateRules" label-width="100px">
         <el-form-item label="周期类型" prop="period_type">
-          <el-select v-model="generateForm.period_type" placeholder="请选择">
+          <el-select v-model="generateForm.period_type" placeholder="请选择" @change="handlePeriodChange">
             <el-option label="日报" value="daily" />
             <el-option label="月报" value="monthly" />
           </el-select>
         </el-form-item>
-        <el-form-item label="开始日期" prop="start_date">
-          <el-date-picker v-model="generateForm.start_date" type="date" placeholder="选择开始日期" value-format="yyyy-MM-dd" style="width:100%" />
+        <el-form-item v-if="generateForm.period_type === 'daily'" label="日期" prop="start_date">
+          <el-date-picker v-model="generateForm.start_date" type="date" placeholder="选择日期" value-format="yyyy-MM-dd" style="width:100%" />
         </el-form-item>
-        <el-form-item label="结束日期" prop="end_date">
-          <el-date-picker v-model="generateForm.end_date" type="date" placeholder="选择结束日期" value-format="yyyy-MM-dd" style="width:100%" />
-        </el-form-item>
+        <template v-if="generateForm.period_type === 'monthly'">
+          <el-form-item label="开始日期" prop="start_date">
+            <el-date-picker v-model="generateForm.start_date" type="date" placeholder="选择开始日期" value-format="yyyy-MM-dd" style="width:100%" />
+          </el-form-item>
+          <el-form-item label="结束日期" prop="end_date">
+            <el-date-picker v-model="generateForm.end_date" type="date" placeholder="选择结束日期" value-format="yyyy-MM-dd" style="width:100%" />
+          </el-form-item>
+        </template>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="handleGenerateClose">取 消</el-button>
@@ -164,7 +169,6 @@ export default {
       generateRules: {
         period_type: [{ required: true, message: '请选择周期类型', trigger: 'change' }],
         start_date: [{ required: true, message: '请选择开始日期', trigger: 'change' }],
-        end_date: [{ required: true, message: '请选择结束日期', trigger: 'change' }],
       },
       detailVisible: false,
       currentDetail: {},
@@ -174,6 +178,21 @@ export default {
       itemsTotal: 0,
       itemsQuery: { id: '', page: 1, pageSize: 10 },
     }
+  },
+  computed: {
+    exportColumns() {
+      return [
+        { label: '周期类型', formatter: (row) => row.period_type === 'daily' ? '日报' : '月报' },
+        { label: '周期', formatter: (row) => `${row.period_start} 至 ${row.period_end}` },
+        { label: '订单数', prop: 'order_count' },
+        { label: '商品总额', prop: 'total_amount' },
+        { label: '实付金额', prop: 'actual_amount' },
+        { label: '退款金额', prop: 'refund_amount' },
+        { label: '营销抵扣', prop: 'marketing_discount' },
+        { label: '净收入', prop: 'net_amount' },
+        { label: '生成时间', formatter: (row) => row.generated_at ? dayjs(row.generated_at).format('YYYY-MM-DD HH:mm:ss') : '-' },
+      ]
+    },
   },
   created() { this.getList() },
   activated() { this.getList() },
@@ -205,6 +224,10 @@ export default {
       this.queryParam = { ...QUERY_PARAM }
       this.getList()
     },
+    handlePeriodChange(val) {
+      this.generateForm.start_date = ''
+      this.generateForm.end_date = ''
+    },
     handleGenerate() {
       this.generateForm = { period_type: 'monthly', start_date: '', end_date: '' }
       this.generateVisible = true
@@ -217,7 +240,11 @@ export default {
       await this.$refs.generateForm.validate()
       this.generating = true
       try {
-        await this.$api.financeGenerate(this.generateForm)
+        const params = { ...this.generateForm }
+        if (params.period_type === 'daily') {
+          params.end_date = params.start_date
+        }
+        await this.$api.financeGenerate(params)
         this.$message({ type: 'success', message: '对账生成成功' })
         this.handleGenerateClose()
         this.getList()
@@ -249,8 +276,11 @@ export default {
       this.itemsLoading = true
       try {
         const res = await this.$api.getFinanceDetailItems(this.itemsQuery)
-        this.itemsData = res.list
-        this.itemsTotal = res.total
+        this.itemsData = res?.list || []
+        this.itemsTotal = res?.total || 0
+      } catch (e) {
+        this.itemsData = []
+        this.itemsTotal = 0
       } finally {
         this.itemsLoading = false
       }
@@ -272,19 +302,13 @@ export default {
         const wb = XLSX.utils.book_new()
 
         // Sheet 1: 对账汇总
+        const summaryHeader = ['周期', '周期类型', '订单数', '商品总额', '实付金额', '退款金额', '营销抵扣', '净收入']
         const summaryData = [
-          ['项目', '数据'],
-          ['周期', `${row.period_start} ~ ${row.period_end}`],
-          ['周期类型', row.period_type === 'daily' ? '日报' : '月报'],
-          ['订单数', row.order_count],
-          ['商品总额', row.total_amount],
-          ['实付金额', row.actual_amount],
-          ['退款金额', row.refund_amount],
-          ['营销抵扣', row.marketing_discount],
-          ['净收入', row.net_amount],
+          summaryHeader,
+          [`${row.period_start} ~ ${row.period_end}`, row.period_type === 'daily' ? '日报' : '月报', row.order_count, row.total_amount, row.actual_amount, row.refund_amount, row.marketing_discount, row.net_amount],
         ]
         const ws1 = XLSX.utils.aoa_to_sheet(summaryData)
-        ws1['!cols'] = [{ wch: 14 }, { wch: 20 }]
+        ws1['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }]
         XLSX.utils.book_append_sheet(wb, ws1, '对账汇总')
 
         // Sheet 2: 订单明细

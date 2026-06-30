@@ -62,6 +62,7 @@
         <CommonExcel
           :tableData="tableData"
           :loading.sync="loading"
+          :columns="exportColumns"
           filename="操作日志"
         ></CommonExcel>
         <el-button
@@ -195,7 +196,21 @@ export default {
       loading: false,
     };
   },
-
+  computed: {
+    exportColumns() {
+      return [
+        { label: '操作人', prop: 'username' },
+        { label: '模块', prop: 'module' },
+        { label: '操作类型', prop: 'action' },
+        { label: '描述', prop: 'description' },
+        { label: '请求方法', prop: 'method' },
+        { label: '结果', formatter: (row) => row.result === 'success' ? '成功' : '失败' },
+        { label: 'IP', prop: 'ip' },
+        { label: '耗时(ms)', prop: 'duration' },
+        { label: '操作时间', formatter: (row) => row.createdAt ? dayjs(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
+      ]
+    },
+  },
   async created() {
     this.getList();
   },

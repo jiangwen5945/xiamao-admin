@@ -39,7 +39,7 @@
           @click="handleDelete(selectedIds)"
           >删除选中</el-button
         >
-        <CommonExcel :table-data="tableData" filename="会员列表" />
+        <CommonExcel :table-data="tableData" :columns="exportColumns" filename="会员列表" />
       </div>
     </div>
 
@@ -391,7 +391,17 @@ export default {
       },
     };
   },
-
+  computed: {
+    exportColumns() {
+      return [
+        { label: '昵称', prop: 'nickname' },
+        { label: '手机号', prop: 'phone' },
+        { label: '状态', formatter: (row) => row.status === 1 ? '启用' : '禁用' },
+        { label: '等级', formatter: (row) => this.levelMap[row.level] || row.level },
+        { label: '创建时间', formatter: (row) => row.createdAt ? dayjs(row.createdAt).format('YYYY-MM-DD HH:mm') : '' },
+      ]
+    },
+  },
   async created() {
     this.getList();
   },

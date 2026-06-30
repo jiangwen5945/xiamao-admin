@@ -65,6 +65,10 @@ export default {
       type: String,
       default: "xlsxxlsx",
     },
+    columns: {
+      type: Array,
+      default: () => null,
+    },
   },
   methods: {
     /** 从父组件 el-table 的 refTable 引用中提取表头配置 */
@@ -93,13 +97,26 @@ export default {
 
     /** 导出当前表格数据为 Excel 文件 */
     exportExcelFn() {
-      const xlsHeader = this.getTableHeader();
+      let tHeader, data;
+
+      if (this.columns) {
+        tHeader = this.columns.map(c => c.label)
+        data = this.tableData.map(row => {
+          return this.columns.map(c => {
+            if (c.formatter) return c.formatter(row)
+            if (c.prop) return row[c.prop]
+            return ''
+          })
+        })
+      } else {
+        const xlsHeader = this.getTableHeader()
+        tHeader = xlsHeader.map(obj => obj.name)
+        data = this.tableData.map(obj => {
+          return xlsHeader.map(v => obj[v.key])
+        })
+      }
+
       import("@/vendor/Export2Excel").then((excel) => {
-        const list = this.tableData;
-        const tHeader = xlsHeader.map((obj) => obj.name);
-        const data = list.map((obj) => {
-          return xlsHeader.map((v) => obj[v.key]);
-        });
         excel.export_json_to_excel({
           header: tHeader,
           data,

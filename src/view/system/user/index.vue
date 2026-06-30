@@ -9,6 +9,7 @@
         <CommonExcel
           :tableData="tableData"
           :loading.sync="loading"
+          :columns="exportColumns"
           filename="用户列表"
         ></CommonExcel>
       </div>
@@ -244,6 +245,21 @@ export default {
       rules,
       loading: false,
     };
+  },
+  computed: {
+    exportColumns() {
+      return [
+        { label: '用户名', prop: 'username' },
+        { label: '昵称', prop: 'nickname' },
+        { label: '邮箱', prop: 'email' },
+        { label: '手机', prop: 'phone' },
+        { label: '性别', formatter: (row) => row.gender == 1 ? '男' : '女' },
+        { label: '状态', formatter: (row) => row.status === 1 ? '启用' : '停用' },
+        { label: '部门', formatter: (row) => row.Department?.name || '-' },
+        { label: '角色', formatter: (row) => (row.Roles || []).map(r => r.name).join(', ') },
+        { label: '出生日期', formatter: (row) => row.birth ? dayjs(row.birth).format('YYYY-MM-DD') : '-' },
+      ]
+    },
   },
   async created() {
     this.getUserList();
