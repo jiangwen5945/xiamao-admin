@@ -5,33 +5,34 @@ Excel 导入导出通用组件
   - 导入 .xls/.xlsx 文件，解析为 JSON 数据
   - 导出当前表格数据为 .xlsx 文件
 
-使用方式：
+使用方式（仅导出）：
+  <CommonExcel :table-data="list" filename="用户列表" :columns="exportColumns" />
+
+使用方式（导出 + 导入）：
   <CommonExcel
     :table-data="list"
-    :loading="loading"
-    filename="用户列表"
-    @import-success="onImportSuccess"
-    @update:loading="loading = $event"
+    :loading.sync="loading"
+    filename="商品列表"
+    :columns="exportColumns"
+    :on-import="handleImport"
   />
 
 Props：
-  tableData  - Array   - 表格数据源（导出用）
-  loading    - Boolean - 加载状态（配合 .sync 或 v-model）
-  filename   - String  - 导出文件名前缀，默认 "xlsxxlsx"
-
-Events：
-  import-success(data) - 导入成功，data 为解析后的数据数组
-  update:loading(val)  - 更新 loading 状态
+  tableData  - Array    - 表格数据源（导出用）
+  loading    - Boolean  - 加载状态（配合 .sync）
+  filename   - String   - 导出文件名前缀，默认 "xlsxxlsx"
+  columns    - Array    - 导出列配置 [{ label, prop?, formatter? }]
+  onImport   - Function - 导入回调，接收 { header, results }
 
 依赖：
   - XLSX      - Excel 文件解析
   - dayjs     - 日期格式化
-  - ../api    - importExcel 接口
   - @/vendor/Export2Excel - 导出工具（动态导入）
 -->
 <template>
   <div class="excel-box">
     <el-upload
+      v-if="onImport"
       action="#"
       accept=".xls,.xlsx"
       :auto-upload="true"
@@ -68,6 +69,10 @@ export default {
     columns: {
       type: Array,
       default: () => null,
+    },
+    onImport: {
+      type: Function,
+      default: null,
     },
   },
   methods: {
@@ -127,21 +132,17 @@ export default {
       });
     },
 
-    /** 校验 -> 解析 -> 调用接口 -> 通知父组件 */
+    /** 校验 -> 解析 -> 回调父组件 */
     async httpRequest({ file }) {
       const isValid = this.validateFile(file)
       if (!isValid) return
 
       this.$emit("update:loading", true);
       await this.readerData(file);
-      const res = await this.$api.importExcel(this.excelData);
-      this.$emit("import-success", this.transExcel(this.excelData.results));
-      this.$emit("update:loading", false);
-      if (res.fail > 0) {
-        const msg = `导入完成：成功 ${res.success} 条，失败 ${res.fail} 条` + (res.errors ? `\n${res.errors.map(e => `第${e.row}行：${e.message}`).join('\n')}` : '')
-        this.$alert(msg, '导入结果', { confirmButtonText: '知道了', dangerouslyUseHTMLString: false })
-      } else {
-        this.$message.success(`导入成功 ${res.success} 条`)
+      try {
+        await this.onImport(this.excelData);
+      } finally {
+        this.$emit("update:loading", false);
       }
     },
 
@@ -159,28 +160,6 @@ export default {
         return false;
       }
       return true;
-    },
-
-    /** 将导入的 Excel 行数据按表头映射为组件可用的对象数组 */
-    transExcel(results) {
-      const mapHeader = {};
-      this.getTableHeader().forEach((e) => (mapHeader[e.name] = e.key));
-      return results.map((item) => {
-        const obj = {};
-        Object.keys(item).forEach((k) => {
-          const key = mapHeader[k];
-          if (key) obj[key] = this.parseExcelValue(item[k]);
-        });
-        return obj;
-      });
-    },
-
-    /** 解析单元格值：数字日期序列号自动转为日期字符串 */
-    parseExcelValue(value) {
-      if (typeof value === "number" && value > 1 && value < 300000) {
-        return this.formatExcelDate(value);
-      }
-      return value;
     },
 
     /** 保存解析后的 Excel 原始数据 */

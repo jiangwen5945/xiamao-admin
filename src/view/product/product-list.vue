@@ -46,7 +46,7 @@
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
         <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleDelete(selectedIds)">批量删除</el-button>
-        <CommonExcel :table-data="tableData" :loading.sync="loading" :columns="exportColumns" filename="商品列表" @import-success="getList" />
+        <CommonExcel :table-data="tableData" :loading.sync="loading" :columns="exportColumns" filename="商品列表" :on-import="handleImport" />
       </div>
     </div>
 
@@ -411,6 +411,16 @@ export default {
       const res = await this.$api.getProductList(params);
       this.tableData = res.list;
       this.total = res.total;
+    },
+    async handleImport({ header, results }) {
+      const res = await this.$api.importExcel({ header, results })
+      if (res.fail > 0) {
+        const msg = `导入完成：成功 ${res.success} 条，失败 ${res.fail} 条` + (res.errors ? `\n${res.errors.map(e => `第${e.row}行：${e.message}`).join('\n')}` : '')
+        this.$alert(msg, '导入结果', { confirmButtonText: '知道了', dangerouslyUseHTMLString: false })
+      } else {
+        this.$message.success(`导入成功 ${res.success} 条`)
+      }
+      this.getList()
     },
     handleCurrentChange(currentPageNum) {
       this.queryParam.page = currentPageNum;
