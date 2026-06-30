@@ -3,8 +3,10 @@
 ## [Unreleased]
 
 ### refactor
-- CommonExcel 新增 `columns` prop，支持自定义模板列的格式化导出，替换自动检测逻辑（8 个页面统一传入列配置）
-- CommonExcel 导入解耦：新增 `onImport` prop 替代硬编码的 `this.$api.importExcel()`，无 `onImport` 不显示导入按钮
+- CommonExcel 整体重构：新增 `columns` prop 支持自定义模板格式化导出、`onImport` prop 解耦导入逻辑、`importText`/`exportText` prop 可配置按钮文案
+- CommonExcel 移除死代码：`getTableHeader`/`generateData`/`formatExcelDate`/`excelData`/`readerData`，消除 `this.$parent` 紧耦合
+- CommonExcel 导出/导入全程包裹 `loading` emit，用户可感知操作状态
+- CommonExcel 导入增加错误处理：`FileReader.onerror` reject、`XLSX.read` 异常 catch、文件类型检测增加扩展名兜底兼容性
 - product-list 迁入导入逻辑：`onImport` 回调中调用 `importExcel` + 结果展示 + 刷新列表
 - stock-list：移除无用字段"锁定库存"（列表列 + 详情抽屉）
 - finance-list：顶部导出改用 CommonExcel + columns，移除自定义 `handleExportList` 方法

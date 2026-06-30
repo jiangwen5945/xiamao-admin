@@ -40,11 +40,9 @@ Props：
       :show-file-list="false"
       :http-request="httpRequest"
     >
-      <el-button type="file" size="medium">导入excel</el-button>
+      <el-button type="file" size="medium">{{ importText }}</el-button>
     </el-upload>
-    <el-button type="file" size="medium" @click="exportExcelFn"
-      >导出excel</el-button
-    >
+    <el-button type="file" size="medium" @click="exportExcelFn">{{ exportText }}</el-button>
   </div>
 </template>
 
@@ -53,12 +51,38 @@ Props：
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 
+function getHeaderRow(sheet) {
+  const headers = [];
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const R = range.s.r;
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const cell = sheet[XLSX.utils.encode_cell({ c: C, r: R })];
+    let hdr = "UNKNOWN " + C;
+    if (cell && cell.t) hdr = XLSX.utils.format_cell(cell);
+    headers.push(hdr);
+  }
+  return headers;
+}
+
+function readFileAsArrayBuffer(rawFile) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('文件读取失败'));
+    reader.readAsArrayBuffer(rawFile);
+  });
+}
+
+function parseExcel(buffer) {
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const header = getHeaderRow(worksheet);
+  const results = XLSX.utils.sheet_to_json(worksheet);
+  return { header, results };
+}
+
 export default {
-  data() {
-    return {
-      excelData: {},
-    };
-  },
   props: {
     tableData: Array,
     loading: Boolean,
@@ -74,84 +98,61 @@ export default {
       type: Function,
       default: null,
     },
+    importText: {
+      type: String,
+      default: '导入excel',
+    },
+    exportText: {
+      type: String,
+      default: '导出excel',
+    },
   },
   methods: {
-    /** 从父组件 el-table 的 refTable 引用中提取表头配置 */
-    getTableHeader() {
-      const tableHeader = [];
-      if (
-        !this.$parent.$refs.refTable ||
-        !this.$parent.$refs.refTable.$children
-      )
-        return;
-
-      this.$parent.$refs.refTable.$children.forEach((e) => {
-        if (e.$children.length !== 0) {
-          e.$children.forEach((v) => {
-            if (v.label !== undefined && v.prop !== undefined) {
-              tableHeader.push({ key: v.prop, name: v.label });
-            }
-          });
-        }
-        if (e.label !== undefined && e.prop !== undefined) {
-          tableHeader.push({ key: e.prop, name: e.label });
-        }
-      });
-      return tableHeader;
-    },
-
-    /** 导出当前表格数据为 Excel 文件 */
-    exportExcelFn() {
-      let tHeader, data;
-
-      if (this.columns) {
-        tHeader = this.columns.map(c => c.label)
-        data = this.tableData.map(row => {
+    async exportExcelFn() {
+      this.$emit("update:loading", true);
+      try {
+        const tHeader = this.columns.map(c => c.label)
+        const data = this.tableData.map(row => {
           return this.columns.map(c => {
             if (c.formatter) return c.formatter(row)
             if (c.prop) return row[c.prop]
             return ''
           })
         })
-      } else {
-        const xlsHeader = this.getTableHeader()
-        tHeader = xlsHeader.map(obj => obj.name)
-        data = this.tableData.map(obj => {
-          return xlsHeader.map(v => obj[v.key])
-        })
-      }
 
-      import("@/vendor/Export2Excel").then((excel) => {
+        const excel = await import("@/vendor/Export2Excel")
         excel.export_json_to_excel({
           header: tHeader,
           data,
-          filename: this.filename + "_" + this.getDateStr(),
+          filename: this.filename + "_" + dayjs().format("YYYYMMDD"),
           autoWidth: true,
           bookType: "xlsx",
         });
-      });
+      } finally {
+        this.$emit("update:loading", false);
+      }
     },
 
-    /** 校验 -> 解析 -> 回调父组件 */
     async httpRequest({ file }) {
-      const isValid = this.validateFile(file)
-      if (!isValid) return
+      if (!this.validateFile(file)) return
 
       this.$emit("update:loading", true);
-      await this.readerData(file);
       try {
-        await this.onImport(this.excelData);
+        const buffer = await readFileAsArrayBuffer(file)
+        const parsed = parseExcel(buffer)
+        await this.onImport(parsed)
+      } catch (e) {
+        this.$message({ type: 'error', message: e.message || '导入失败' })
       } finally {
         this.$emit("update:loading", false);
       }
     },
 
     validateFile(file) {
-      const isXls = file.type === "application/vnd.ms-excel";
-      const isXlsx =
-        file.type ===
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-      if (!isXls && !isXlsx) {
+      const extMatch = /\.(xls|xlsx)$/i.test(file.name)
+      const typeMatch = file.type === "application/vnd.ms-excel" ||
+        file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      if (!extMatch && !typeMatch) {
         this.$message.error("上传文件只能是 xls/xlsx 格式！");
         return false;
       }
@@ -160,59 +161,6 @@ export default {
         return false;
       }
       return true;
-    },
-
-    /** 保存解析后的 Excel 原始数据 */
-    generateData({ header, results }) {
-      this.excelData.header = header;
-      this.excelData.results = results;
-    },
-
-    /** 用 FileReader 读取 Excel 文件并解析 */
-    readerData(rawFile) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const data = e.target.result;
-          const workbook = XLSX.read(data, { type: "array" });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const header = this.getHeaderRow(worksheet);
-          const results = XLSX.utils.sheet_to_json(worksheet);
-          this.generateData({ header, results });
-          resolve();
-        };
-        reader.readAsArrayBuffer(rawFile);
-      });
-    },
-
-    /** Excel 序列号数字转日期字符串（dayjs） */
-    formatExcelDate(serial, format = "YYYY-MM-DD") {
-      if (typeof serial === "number") {
-        return dayjs(
-          new Date((serial - 25567) * 86400 * 1000)
-        ).format(format);
-      }
-      return dayjs(serial).format(format);
-    },
-
-    /** 获取当天日期字符串，用于导出文件名 */
-    getDateStr() {
-      return dayjs().format("YYYYMMDD");
-    },
-
-    /** 获取 Excel 首行列头 */
-    getHeaderRow(sheet) {
-      const headers = [];
-      const range = XLSX.utils.decode_range(sheet["!ref"]);
-      const R = range.s.r;
-      for (let C = range.s.c; C <= range.e.c; C++) {
-        const cell = sheet[XLSX.utils.encode_cell({ c: C, r: R })];
-        let hdr = "UNKNOWN " + C;
-        if (cell && cell.t) hdr = XLSX.utils.format_cell(cell);
-        headers.push(hdr);
-      }
-      return headers;
     },
   },
 };
