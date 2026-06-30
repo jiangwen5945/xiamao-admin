@@ -73,7 +73,7 @@ export default {
     const userInfo = this.$store.state.tab.userInfo || getLocalUserInfo()
     if (!userInfo) return
     try {
-      const res = await this.$api.detail({ params: { id: userInfo.id } })
+      const res = await this.$api.getUserDetail({ id: userInfo.id })
       this.user = res
     } catch {
       this.$message?.error?.('获取用户信息失败')

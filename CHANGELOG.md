@@ -30,6 +30,12 @@
   - 处理状态切换（toggleStatus/toggleTop）、发送消息、表单提交等操作的未保护 await 调用
 
 ### refactor
+- API 定义瘦身：移除 10 个从未调用的死代码 API（`getData`、`signLogistics`、`addReturn`、`getReturnDetail`、`getLogisticsDetail`、`getCouponDetail`、`getBannerDetail`、`getLogDetail`、`getNotificationTemplateDetail`、`getSiteMessageDetail`）
+- 合并重复的站内信 API：`getNotifications`/`readNotification` 改用 `getSiteMessageList`/`markSiteMessageRead`（相同端点），同步更新 TheHeader.vue
+- 合并重复的用户详情 API：`detail` 改用 `getUserDetail`，同步更新 member-center.vue
+- `src/api/index.js` 从 465 行缩减至 421 行
+
+### refactor
 - CommonExcel 整体重构：新增 `columns` prop 支持自定义模板格式化导出、`onImport` prop 解耦导入逻辑、`importText`/`exportText` prop 可配置按钮文案
 - CommonExcel 移除死代码：`getTableHeader`/`generateData`/`formatExcelDate`/`excelData`/`readerData`，消除 `this.$parent` 紧耦合
 - CommonExcel 导出/导入全程包裹 `loading` emit，用户可感知操作状态

@@ -25,10 +25,6 @@ export const editUser = (data) => {
 export const delUser = (data) => {
   return http.post("/user/delete", data);
 };
-export const detail = (data) => {
-  return http.get("/user/detail", data);
-};
-
 // 角色
 export const getRoleList = (params) => {
   return http.get("/role/list", { params });
@@ -194,25 +190,9 @@ export const importExcel = (data) => {
   return http.post("/importExcel", data);
 };
 
-// 请求首页数据
-export const getData = () => {
-  return http.get("/home/getData");
-};
-
-// 通知
-export const getNotifications = (params) => {
-  return http.get("/notification/message/list", { params });
-};
-export const readNotification = (data) => {
-  return http.post("/notification/message/mark-read", data);
-};
-
 // 通知模板
 export const getNotificationTemplateList = (params) => {
   return http.get("/notification/template/list", { params });
-};
-export const getNotificationTemplateDetail = (params) => {
-  return http.get("/notification/template/detail", { params });
 };
 export const addNotificationTemplate = (data) => {
   return http.post("/notification/template/add", data);
@@ -228,9 +208,6 @@ export const deleteNotificationTemplate = (data) => {
 export const getSiteMessageList = (params) => {
   return http.get("/notification/message/list", { params });
 };
-export const getSiteMessageDetail = (params) => {
-  return http.get("/notification/message/detail", { params });
-};
 export const sendSiteMessage = (data) => {
   return http.post("/notification/message/send", data);
 };
@@ -240,9 +217,6 @@ export const markSiteMessageRead = (data) => {
 // 操作日志
 export const getLogList = (params) => {
   return http.get("/log/list", { params });
-};
-export const getLogDetail = (params) => {
-  return http.get("/log/detail", { params });
 };
 export const deleteLog = (data) => {
   return http.post("/log/delete", data);
@@ -273,9 +247,6 @@ export const adminApplyAfterSales = (data) => {
 // 营销活动 - 优惠券
 export const getCouponList = (params) => {
   return http.get("/marketing/coupon/list", { params });
-};
-export const getCouponDetail = (params) => {
-  return http.get("/marketing/coupon/detail", { params });
 };
 export const createCoupon = (data) => {
   return http.post("/marketing/coupon/add", data);
@@ -382,9 +353,6 @@ export const updateSystemConfigs = (data) => {
 export const getBannerList = (params) => {
   return http.get("/content/banner/list", { params });
 };
-export const getBannerDetail = (params) => {
-  return http.get("/content/banner/detail", { params });
-};
 export const addBanner = (data) => {
   return http.post("/content/banner/add", data);
 };
@@ -431,12 +399,6 @@ export const getLogisticsPending = (params) => {
 export const getLogisticsList = (params) => {
   return http.get("/logistics/list", { params });
 };
-export const getLogisticsDetail = (order_id) => {
-  return http.get("/logistics/detail", { params: { order_id } });
-};
-export const signLogistics = (data) => {
-  return http.post("/logistics/sign", data);
-};
 export const virtualShip = (data) => {
   return http.post("/logistics/virtual-ship", data);
 };
@@ -444,12 +406,6 @@ export const virtualShip = (data) => {
 // 退货单管理
 export const getReturnList = (params) => {
   return http.get("/logistics/return/list", { params });
-};
-export const getReturnDetail = (params) => {
-  return http.get("/logistics/return/detail", { params });
-};
-export const addReturn = (data) => {
-  return http.post("/logistics/return/add", data);
 };
 export const updateReturn = (data) => {
   return http.post("/logistics/return/update", data);

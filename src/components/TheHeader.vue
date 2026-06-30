@@ -162,13 +162,13 @@ export default {
     async fetchNotifications() {
       const userId = this.userInfo?.id
       if (!userId) return
-      const res = await this.$api.getNotifications({ receiver_type: 'admin', receiver_id: userId })
+      const res = await this.$api.getSiteMessageList({ receiver_type: 'admin', receiver_id: userId })
       this.noticeList = res.list || []
       this.unreadCount = this.noticeList.filter(n => !n.is_read).length
     },
     async handleReadNotice(item) {
       if (item.is_read) return
-      await this.$api.readNotification({ id: item.id })
+      await this.$api.markSiteMessageRead({ id: item.id })
       item.is_read = true
       this.unreadCount = Math.max(0, this.unreadCount - 1)
     },
