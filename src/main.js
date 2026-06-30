@@ -13,12 +13,6 @@ Vue.prototype.$api = api
 import '../src/styles/theme.scss'
 import '../src/styles/global.scss'
 import '../src/styles/variables.css'
-console.log('process.env', process.env);
-
-if (process.env.VUE_APP_USE_MOCK !== 'false') {
-  import('../mock/index.js')
-}
-
 Vue.config.productionTip = false
 Vue.use(ElementUI);
 

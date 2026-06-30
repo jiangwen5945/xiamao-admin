@@ -46,13 +46,14 @@
       <div class="left">
         <el-button type="primary" size="medium" @click="handleAdd">新增</el-button>
         <el-button type="danger" size="medium" :disabled="!selectedIds.length" @click="handleDelete(selectedIds)">批量删除</el-button>
-        <CommonExcel :table-data="tableData" :loading.sync="loading" filename="商品列表" />
+        <CommonExcel :table-data="tableData" :loading.sync="loading" filename="商品列表" @import-success="getList" />
       </div>
     </div>
 
     <div class="table-content">
       <el-table :data="tableData" stripe ref="refTable" @selection-change="handleSelectionChange" @sort-change="handleSortChange">
         <el-table-column type="selection" width="45" />
+        <el-table-column prop="id" label="编号" width="70" />
         <el-table-column prop="name" label="商品名称" min-width="150">
           <template #default="scope">
             <el-link type="primary" :underline="false" @click="handleDetail(scope.row)">
@@ -60,7 +61,6 @@
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="id" label="编号" width="70" />
         <el-table-column label="图片" width="90">
           <template #default="scope">
             <el-image
@@ -457,6 +457,7 @@ export default {
         sort: img.sort || i + 1,
         type: img.type || (i === 0 ? "main" : "carousel"),
       }));
+      this.form.specs = this.form.specs || []
       this.isVisible = true;
       this.setupEditorImageHandler();
     },

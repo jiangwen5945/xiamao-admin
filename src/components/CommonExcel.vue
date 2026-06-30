@@ -32,14 +32,12 @@ Events：
 <template>
   <div class="excel-box">
     <el-upload
+      action="#"
       accept=".xls,.xlsx"
-      action="/api/importExcel"
       :auto-upload="true"
       :multiple="false"
-      :before-upload="beforeUpload"
       :show-file-list="false"
-      :on-change="fileChange"
-      :on-success="handleSuccess"
+      :http-request="httpRequest"
     >
       <el-button type="file" size="medium">导入excel</el-button>
     </el-upload>
@@ -57,13 +55,12 @@ import dayjs from "dayjs";
 export default {
   data() {
     return {
-      files: null, // 待上传的原始 File 对象
-      excelData: {}, // 解析后的 Excel 数据（header + results）
+      excelData: {},
     };
   },
   props: {
-    tableData: Array, // 表格数据源，用于导出
-    loading: Boolean, // 加载状态
+    tableData: Array,
+    loading: Boolean,
     filename: {
       type: String,
       default: "xlsxxlsx",
@@ -113,36 +110,38 @@ export default {
       });
     },
 
-    /** 上传前校验文件格式和大小 */
-    beforeUpload(file) {
-      const isType = file.type === "application/vnd.ms-excel";
-      const isTypeComputer =
-        file.type ===
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-      const fileType = isType || isTypeComputer;
-      if (!fileType) {
-        this.$message.error("上传文件只能是 xls/xlsx 格式！");
-      }
-      const fileLimit = file.size / 1024 / 1024 < 10;
-      if (!fileLimit) {
-        this.$message.error("上传文件大小不超过 10M！");
-      }
-      return fileType && fileLimit;
-    },
+    /** 校验 -> 解析 -> 调用接口 -> 通知父组件 */
+    async httpRequest({ file }) {
+      const isValid = this.validateFile(file)
+      if (!isValid) return
 
-    /** 导入成功：解析数据 -> 提交后端 -> 通知父组件 */
-    async handleSuccess() {
-      this.readerData(this.files);
-      await this.$api.importExcel(this.excelData);
+      this.$emit("update:loading", true);
+      await this.readerData(file);
+      const res = await this.$api.importExcel(this.excelData);
       this.$emit("import-success", this.transExcel(this.excelData.results));
       this.$emit("update:loading", false);
-      this.$message.success("上传成功");
+      if (res.fail > 0) {
+        const msg = `导入完成：成功 ${res.success} 条，失败 ${res.fail} 条` + (res.errors ? `\n${res.errors.map(e => `第${e.row}行：${e.message}`).join('\n')}` : '')
+        this.$alert(msg, '导入结果', { confirmButtonText: '知道了', dangerouslyUseHTMLString: false })
+      } else {
+        this.$message.success(`导入成功 ${res.success} 条`)
+      }
     },
 
-    /** 文件选择时保存原始 File 对象 */
-    fileChange(files) {
-      if (!files.raw) return;
-      this.files = files.raw;
+    validateFile(file) {
+      const isXls = file.type === "application/vnd.ms-excel";
+      const isXlsx =
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      if (!isXls && !isXlsx) {
+        this.$message.error("上传文件只能是 xls/xlsx 格式！");
+        return false;
+      }
+      if (file.size / 1024 / 1024 >= 10) {
+        this.$message.error("上传文件大小不超过 10M！");
+        return false;
+      }
+      return true;
     },
 
     /** 将导入的 Excel 行数据按表头映射为组件可用的对象数组 */
@@ -175,7 +174,6 @@ export default {
 
     /** 用 FileReader 读取 Excel 文件并解析 */
     readerData(rawFile) {
-      this.$emit("update:loading", true);
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
